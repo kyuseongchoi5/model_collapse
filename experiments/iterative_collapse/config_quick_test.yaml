@@ -1,0 +1,45 @@
+# Quick CPU/GPU Test Configuration
+# Smaller model and fewer epochs for fast testing
+
+# Experiment parameters
+experiment_name: quick_test
+switch_epoch: 10       # Switch early for quick observation
+total_epochs: 20       # Short run
+synthetic_mode: sample # 'mean' or 'sample'
+synthetic_ratio: 1.0   # Pure synthetic after switch
+use_autoregressive_synthetic: false
+
+# Data parameters
+prior: gp              # Simple GP prior
+num_features: 1
+loss_function: gaussnll
+bptt: 10              # Sequence length
+batch_size: 200       # Smaller batch for speed
+steps_per_epoch: 10   # Fewer steps per epoch
+
+# Model architecture (smaller)
+emsize: 256           # Smaller embedding
+nlayers: 3            # Fewer layers
+nhid: 512             # Smaller hidden dim
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 5      # Shorter warmup
+validation_period: 5  # Save less frequently
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Extra prior kwargs
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+
+# Paths
+save_dir: ./experiments/iterative_collapse/checkpoints
+metrics_dir: ./experiments/iterative_collapse/metrics
