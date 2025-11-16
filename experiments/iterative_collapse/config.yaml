@@ -11,9 +11,9 @@ use_autoregressive_synthetic: false  # Use slower autoregressive generation
 
 # Data parameters
 prior: gp              # 'gp', 'mix_gp', 'ridge', or 'stroke'
-num_features: 1        # Number of input features (default: 1 for simple regression)
+num_features: 10        # Number of input features (default: 1 for simple regression)
 loss_function: gaussnll  # 'gaussnll', 'mse', 'ce', or 'barnll'
-bptt: 10              # Sequence length
+bptt: 50              # Sequence length
 batch_size: 1000      # Batch size
 steps_per_epoch: 100  # Number of batches per epoch
 
