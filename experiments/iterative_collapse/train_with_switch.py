@@ -374,6 +374,11 @@ if __name__ == '__main__':
     parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
     parser.add_argument('--warmup_epochs', default=50, type=int)
     parser.add_argument('--validation_period', default=10, type=int)
+    parser.add_argument('--permutation_invariant_max_eval_pos', default=None, type=int,
+                       help='Max eval position for permutation invariant sampling (None uses all positions)')
+    parser.add_argument('--permutation_invariant_sampling', default='weighted',
+                       choices=['weighted', 'uniform'],
+                       help='Sampling strategy for single_eval_pos')
 
     # Encoder parameters
     parser.add_argument('--encoder', default='linear', type=str,
@@ -471,6 +476,14 @@ if __name__ == '__main__':
     }
     pos_encoder_gen = pos_encoder_map[args.pos_encoder]
 
+    # Set up single_eval_pos_gen
+    single_eval_pos_gen = None
+    if args.permutation_invariant_max_eval_pos is not None:
+        if args.permutation_invariant_sampling == 'weighted':
+            single_eval_pos_gen = get_weighted_single_eval_pos_sampler(args.permutation_invariant_max_eval_pos)
+        elif args.permutation_invariant_sampling == 'uniform':
+            single_eval_pos_gen = get_uniform_single_eval_pos_sampler(args.permutation_invariant_max_eval_pos)
+
     # Print configuration
     print("\n" + "="*80)
     print("EXPERIMENT CONFIGURATION")
@@ -503,6 +516,7 @@ if __name__ == '__main__':
         pos_encoder_generator=pos_encoder_gen,
         extra_prior_kwargs_dict=args.extra_prior_kwargs_dict,
         validation_period=args.validation_period,
+        single_eval_pos_gen=single_eval_pos_gen,
         save_dir=args.save_dir,
         metrics_dir=args.metrics_dir,
         experiment_name=args.experiment_name,

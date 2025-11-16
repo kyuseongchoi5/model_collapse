@@ -28,6 +28,8 @@ dropout: 0.0          # Dropout rate
 lr: 0.001             # Learning rate
 warmup_epochs: 50     # Warmup epochs for learning rate
 validation_period: 10 # Save checkpoint every N epochs
+permutation_invariant_max_eval_pos: null  # Max eval pos (null uses bptt)
+permutation_invariant_sampling: weighted  # 'weighted' or 'uniform'
 
 # Encoder parameters
 encoder: linear       # 'linear', 'mlp', or 'positional'
