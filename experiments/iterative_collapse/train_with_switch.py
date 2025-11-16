@@ -375,11 +375,12 @@ if __name__ == '__main__':
 
     # Encoder parameters
     parser.add_argument('--encoder', default='linear', type=str,
-                       choices=['linear', 'mlp', 'positional'])
+                       help='Input encoder (linear is always available, mlp/positional may require additional code)')
     parser.add_argument('--y_encoder', default='linear', type=str,
-                       choices=['linear', 'mlp', 'positional'])
+                       help='Y encoder (linear is always available, mlp/positional may require additional code)')
     parser.add_argument('--pos_encoder', default='sinus', type=str,
-                       choices=['sinus', 'learned', 'none'])
+                       choices=['sinus', 'learned', 'none'],
+                       help='Positional encoding type')
 
     # Extra prior kwargs
     parser.add_argument("--extra_prior_kwargs_dict", default={'fuse_x_y': False},
@@ -435,12 +436,24 @@ if __name__ == '__main__':
     }
     criterion = loss_map[args.loss_function]
 
-    # Select encoders
+    # Select encoders (only include available encoders)
     encoder_map = {
         'linear': encoders.Linear,
-        'mlp': encoders.MLP,
-        'positional': encoders.Positional,
     }
+
+    # Add optional encoders if available
+    if hasattr(encoders, 'MLP'):
+        encoder_map['mlp'] = encoders.MLP
+    if hasattr(encoders, 'Positional'):
+        encoder_map['positional'] = encoders.Positional
+
+    if args.encoder not in encoder_map:
+        available = ', '.join(encoder_map.keys())
+        raise ValueError(f"Encoder '{args.encoder}' not available. Available encoders: {available}")
+    if args.y_encoder not in encoder_map:
+        available = ', '.join(encoder_map.keys())
+        raise ValueError(f"Y-encoder '{args.y_encoder}' not available. Available encoders: {available}")
+
     encoder_gen = encoder_map[args.encoder]
     y_encoder_gen = encoder_map[args.y_encoder]
 
