@@ -354,6 +354,8 @@ if __name__ == '__main__':
     # Data parameters
     parser.add_argument('--prior', type=str, default='gp',
                        help='Which prior/data source to use (gp, ridge, stroke, or mix_gp if available)')
+    parser.add_argument('--num_features', default=1, type=int,
+                       help='Number of input features for the prior')
     parser.add_argument('--loss_function', default='gaussnll',
                        choices=['gaussnll', 'mse', 'ce', 'barnll'],
                        help='Loss function')
@@ -410,6 +412,10 @@ if __name__ == '__main__':
     # Set nhid if not specified
     if args.nhid is None:
         args.nhid = 2 * args.emsize
+
+    # Ensure num_features is in extra_prior_kwargs_dict
+    if 'num_features' not in args.extra_prior_kwargs_dict:
+        args.extra_prior_kwargs_dict['num_features'] = args.num_features
 
     # Select prior (only include available priors)
     prior_map = {
