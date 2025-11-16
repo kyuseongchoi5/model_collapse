@@ -1,0 +1,44 @@
+# Large Model Configuration
+# For studying model collapse with higher capacity models
+
+experiment_name: large_model_collapse
+switch_epoch: 100
+total_epochs: 200
+synthetic_mode: sample
+synthetic_ratio: 1.0
+use_autoregressive_synthetic: false
+
+# Data parameters
+prior: gp
+num_features: 1
+loss_function: gaussnll
+bptt: 10
+batch_size: 1000
+steps_per_epoch: 100
+
+# Model architecture (2x larger)
+emsize: 1024          # 2x larger than baseline
+nlayers: 12           # 2x more layers
+nhid: 2048           # 2x larger
+nhead: 8             # 2x more heads
+dropout: 0.0
+
+# Training parameters
+lr: 0.0005           # Lower LR for larger model
+warmup_epochs: 50
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Extra prior kwargs
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+
+# Paths
+save_dir: ./experiments/iterative_collapse/checkpoints
+metrics_dir: ./experiments/iterative_collapse/metrics
