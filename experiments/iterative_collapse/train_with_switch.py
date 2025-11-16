@@ -477,12 +477,16 @@ if __name__ == '__main__':
     pos_encoder_gen = pos_encoder_map[args.pos_encoder]
 
     # Set up single_eval_pos_gen
-    single_eval_pos_gen = None
-    if args.permutation_invariant_max_eval_pos is not None:
-        if args.permutation_invariant_sampling == 'weighted':
-            single_eval_pos_gen = get_weighted_single_eval_pos_sampler(args.permutation_invariant_max_eval_pos)
-        elif args.permutation_invariant_sampling == 'uniform':
-            single_eval_pos_gen = get_uniform_single_eval_pos_sampler(args.permutation_invariant_max_eval_pos)
+    # If permutation_invariant_max_eval_pos is None, use bptt as default
+    max_eval_pos = args.permutation_invariant_max_eval_pos if args.permutation_invariant_max_eval_pos is not None else args.bptt
+
+    if args.permutation_invariant_sampling == 'weighted':
+        single_eval_pos_gen = get_weighted_single_eval_pos_sampler(max_eval_pos)
+    elif args.permutation_invariant_sampling == 'uniform':
+        single_eval_pos_gen = get_uniform_single_eval_pos_sampler(max_eval_pos)
+    else:
+        # Default to weighted sampling
+        single_eval_pos_gen = get_weighted_single_eval_pos_sampler(max_eval_pos)
 
     # Print configuration
     print("\n" + "="*80)
