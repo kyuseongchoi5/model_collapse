@@ -1,0 +1,96 @@
+# Configuration file for model collapse experiment
+# Use with: python train_with_switch.py --config config.yaml
+
+# Experiment parameters
+experiment_name: null  # Auto-generated if not specified
+switch_epoch: 100      # Epoch to switch from true to synthetic data
+total_epochs: 200      # Total training epochs
+synthetic_mode: sample # 'mean' or 'sample' - how to generate synthetic Y
+synthetic_ratio: 1.0   # Ratio of synthetic data after switch (1.0 = pure)
+use_autoregressive_synthetic: false  # Use slower autoregressive generation
+
+# Data parameters
+prior: gp              # 'gp', 'mix_gp', 'ridge', or 'stroke'
+loss_function: gaussnll  # 'gaussnll', 'mse', 'ce', or 'barnll'
+bptt: 10              # Sequence length
+batch_size: 1000      # Batch size
+steps_per_epoch: 100  # Number of batches per epoch
+
+# Model architecture
+emsize: 512           # Embedding dimension
+nlayers: 6            # Number of transformer layers
+nhid: 1024            # Hidden dimension (default: 2*emsize)
+nhead: 4              # Number of attention heads
+dropout: 0.0          # Dropout rate
+
+# Training parameters
+lr: 0.001             # Learning rate
+warmup_epochs: 50     # Warmup epochs for learning rate
+validation_period: 10 # Save checkpoint every N epochs
+
+# Encoder parameters
+encoder: linear       # 'linear', 'mlp', or 'positional'
+y_encoder: linear     # 'linear', 'mlp', or 'positional'
+pos_encoder: sinus    # 'sinus', 'learned', or 'none'
+
+# Extra prior kwargs
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+
+# Paths
+save_dir: ./experiments/iterative_collapse/checkpoints
+metrics_dir: ./experiments/iterative_collapse/metrics
+
+
+# ============================================================================
+# ALTERNATIVE CONFIGURATIONS FOR DIFFERENT EXPERIMENTS
+# ============================================================================
+# Uncomment and modify sections below for different experiments
+
+# --- Quick CPU Test (smaller, faster) ---
+# experiment_name: quick_cpu_test
+# switch_epoch: 10
+# total_epochs: 20
+# batch_size: 200
+# steps_per_epoch: 10
+# emsize: 256
+# nlayers: 3
+# nhid: 512
+# nhead: 4
+
+# --- Early Switch Experiment ---
+# experiment_name: early_switch_epoch50
+# switch_epoch: 50
+# total_epochs: 200
+
+# --- Late Switch Experiment ---
+# experiment_name: late_switch_epoch150
+# switch_epoch: 150
+# total_epochs: 200
+
+# --- Mean Prediction (faster collapse expected) ---
+# experiment_name: mean_prediction_collapse
+# synthetic_mode: mean
+# switch_epoch: 100
+# total_epochs: 200
+
+# --- Autoregressive Synthetic (more accurate) ---
+# experiment_name: autoregressive_synthetic
+# use_autoregressive_synthetic: true
+# switch_epoch: 100
+# total_epochs: 200
+
+# --- Mixed Data (50% real, 50% synthetic) ---
+# experiment_name: mixed_data_50_50
+# synthetic_ratio: 0.5
+# switch_epoch: 100
+# total_epochs: 200
+
+# --- Large Model Experiment ---
+# experiment_name: large_model_collapse
+# emsize: 1024
+# nlayers: 12
+# nhid: 2048
+# nhead: 8
+# switch_epoch: 100
+# total_epochs: 200
