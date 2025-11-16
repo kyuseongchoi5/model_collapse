@@ -1,0 +1,152 @@
+================================================================================
+MODEL COLLAPSE ANALYSIS - FULL REPORT
+Experiment: GP Prior → Synthetic Data Switch
+================================================================================
+
+EXPERIMENT SETUP:
+- Model: PFN (512 emsize, 6 layers)
+- Prior: Gaussian Process (GP)
+- Switch epoch: 100 (out of 200 total)
+- Synthetic mode: sampling (not mean)
+- Loss function: GaussianNLL
+
+================================================================================
+PHASE 1: TRAINING ON TRUE GP DATA (Epochs 1-100)
+================================================================================
+
+✅ SUCCESSFUL CONVERGENCE:
+  Initial test loss (epoch 1):    0.855
+  Final test loss (epoch 100):    0.605
+  Improvement:                    29.2%
+
+  Training loss trajectory:       0.704 → 0.616 (stable)
+  Prediction variance:            0.19 - 0.22 (healthy, consistent)
+
+  Status: Model successfully learned the GP prior ✅
+
+================================================================================
+PHASE 2: TRAINING ON SYNTHETIC DATA (Epochs 101-200)
+================================================================================
+
+❌ CATASTROPHIC MODEL COLLAPSE:
+
+Test Loss Degradation (evaluated on TRUE GP data):
+┌─────────┬────────────┬──────────────┬─────────────────┐
+│  Epoch  │ Test Loss  │ vs Baseline  │    Status       │
+├─────────┼────────────┼──────────────┼─────────────────┤
+│   100   │    0.605   │   1.0x       │ ✅ Baseline     │
+│   101   │    2.003   │   3.3x       │ ❌ Immediate    │
+│   104   │    5.978   │   9.9x       │ ❌ Severe       │
+│   110   │    2.020   │   3.3x       │ ❌ Oscillating  │
+│   115   │    1.760   │   2.9x       │ ❌ Unstable     │
+│   120   │    0.743   │   1.2x       │ ⚠️  Deceptive   │
+│   140   │    2.881   │   4.8x       │ ❌ Degrading    │
+│   150   │    4.496   │   7.4x       │ ❌ Worse        │
+│   160   │   99.441   │ 164.4x       │ ❌❌ Disaster    │
+│   162   │  479.736   │ 793.2x       │ ❌❌❌ Collapse  │
+│   180   │   38.644   │  63.9x       │ ❌❌ Critical    │
+│   190   │  207.720   │ 343.5x       │ ❌❌❌ Failed    │
+│   195   │ 1222.954   │ 2022.2x      │ ❌❌❌ Broken    │
+│   200   │  305.647   │ 505.4x       │ ❌❌❌ Unusable  │
+└─────────┴────────────┴──────────────┴─────────────────┘
+
+WORST MOMENTS:
+  • Highest test loss: 1222.95 at epoch 195 (2022x degradation!)
+  • Complete instability: losses ranging from 0.62 to 479.7
+
+Mode Collapse (Prediction Variance):
+┌─────────┬────────────┬─────────────────┐
+│  Epoch  │  Variance  │    Status       │
+├─────────┼────────────┼─────────────────┤
+│   100   │   0.213    │ ✅ Healthy      │
+│   101   │   4.628    │ ⚠️  Explosion   │
+│   110   │   2.020    │ ⚠️  High        │
+│   120   │   0.674    │ ⚠️  Declining   │
+│   130   │   0.200    │ ⚠️  Dropping    │
+│   135   │   0.038    │ ❌ Collapsing   │
+│   140   │   0.029    │ ❌ Severe       │
+│   150   │   0.017    │ ❌ Critical     │
+│   160   │   0.00016  │ ❌❌ Collapsed   │
+│   180   │   0.00027  │ ❌❌ Dead        │
+│   200   │   0.00032  │ ❌❌ Zero        │
+└─────────┴────────────┴─────────────────┘
+
+Variance Reduction: 99.85% (from 0.213 to 0.00032)
+Diagnosis: COMPLETE MODE COLLAPSE
+
+Training Loss Pathology:
+┌─────────┬──────────────┬──────────────────────┐
+│  Epoch  │  Train Loss  │       Issue          │
+├─────────┼──────────────┼──────────────────────┤
+│   100   │     0.616    │ Normal               │
+│   110   │     2.580    │ Increases (expected) │
+│   120   │     0.330    │ Decreases            │
+│   130   │     0.059    │ Too low              │
+│   133   │    -0.220    │ 🚨 NEGATIVE!         │
+│   140   │    -0.637    │ 🚨 More negative     │
+│   150   │    -1.015    │ 🚨 Pathological      │
+│   160   │    -1.416    │ 🚨 Exploitation      │
+│   180   │    -2.014    │ 🚨 Severe            │
+│   194   │    -2.982    │ 🚨 Maximum exploit   │
+│   200   │    -2.612    │ 🚨 Still negative    │
+└─────────┴──────────────┴──────────────────────┘
+
+🚨 CRITICAL ISSUE: Negative training losses indicate the model is
+   exploiting the GaussianNLL loss function by predicting tiny
+   variances, creating a self-reinforcing collapse loop.
+
+================================================================================
+ROOT CAUSE ANALYSIS
+================================================================================
+
+1. CLASSIC MODEL COLLAPSE:
+   • Synthetic data lacks the diversity of true GP samples
+   • Model trains on increasingly biased synthetic distribution
+   • Progressive loss of ability to generalize to true data
+
+2. GAUSSIANNLL EXPLOITATION:
+   • GaussianNLL = 0.5 * (log(var) + (y - mean)²/var)
+   • Model learns to predict var → 0 to minimize loss
+   • Creates feedback loop:
+     Step 1: Model predicts tiny variance
+     Step 2: Generates synthetic data matching those predictions
+     Step 3: Training loss becomes negative (looks good!)
+     Step 4: But test performance catastrophically fails
+
+3. MODE COLLAPSE:
+   • Prediction variance drops from 0.21 to 0.0003 (99.85% reduction)
+   • Model outputs essentially deterministic predictions
+   • Lost all uncertainty quantification capability
+
+4. COMPLETE INSTABILITY:
+   • Test loss oscillates wildly (0.6 → 479.7 → 9.4)
+   • No convergence, pure chaos
+   • Model is completely broken
+
+================================================================================
+CONCLUSIONS
+================================================================================
+
+SEVERITY: 🔴 CATASTROPHIC MODEL COLLAPSE
+
+This experiment demonstrates:
+✅ Perfect example of model collapse in action
+✅ Shows how synthetic data feedback creates instability
+✅ Reveals pathology specific to GaussianNLL loss
+✅ Documents complete mode collapse (variance → 0)
+
+The model went from:
+  • Epoch 100: Functional GP regression (test loss 0.60)
+  • Epoch 200: Completely broken (test loss 305, variance ≈ 0)
+
+RECOMMENDATION FOR FUTURE EXPERIMENTS:
+1. Try different loss functions (MSE instead of GaussianNLL)
+2. Add variance regularization to prevent collapse
+3. Mix real and synthetic data (synthetic_ratio < 1.0)
+4. Use temperature sampling to increase diversity
+5. Early stopping when variance drops below threshold
+
+This is EXACTLY the type of result you want to see when studying
+model collapse - it's a complete, textbook demonstration! 🎯
+
+================================================================================
