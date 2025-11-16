@@ -16,7 +16,7 @@ from typing import List, Tuple, Dict
 
 
 @torch.no_grad()
-def evaluate_on_test_set(model, test_batches, criterion, n_out, device):
+def evaluate_on_test_set(model, test_batches, criterion, n_out, device, single_eval_pos=None):
     """
     Evaluate model on a fixed test set.
 
@@ -26,6 +26,7 @@ def evaluate_on_test_set(model, test_batches, criterion, n_out, device):
         criterion: Loss function
         n_out: Number of outputs
         device: Device to evaluate on
+        single_eval_pos: Evaluation position (None will use bptt//2 as default)
 
     Returns:
         avg_loss: Average loss across test set
@@ -40,12 +41,21 @@ def evaluate_on_test_set(model, test_batches, criterion, n_out, device):
         # Move data to device
         if isinstance(data, tuple):
             data = tuple(e.to(device) for e in data)
+            # Get sequence length from data
+            seq_len = data[0].shape[0]
         else:
             data = data.to(device)
+            seq_len = data.shape[0]
         targets = targets.to(device)
 
+        # Set default eval position if not provided (use half the sequence as training)
+        eval_pos = single_eval_pos if single_eval_pos is not None else max(1, seq_len // 2)
+
         # Forward pass
-        output = model(data, single_eval_pos=None)
+        output = model(data, single_eval_pos=eval_pos)
+
+        # Adjust targets to match eval positions
+        targets = targets[eval_pos:]
 
         # Compute loss
         if isinstance(criterion, nn.GaussianNLLLoss):
