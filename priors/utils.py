@@ -21,7 +21,7 @@ def get_batch_to_dataloader(get_batch_method_):
             # The stuff outside the or is set as class attribute before instantiation.
             self.num_features = get_batch_kwargs.get('num_features') or self.num_features
             self.num_outputs = get_batch_kwargs.get('num_outputs') or self.num_outputs
-            print('DataLoader.__dict__', self.__dict__)
+            # Debug print removed to reduce verbosity during training
 
         @staticmethod
         def gbm(*args, fuse_x_y=True, **kwargs):
