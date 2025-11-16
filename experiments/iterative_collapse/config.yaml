@@ -3,31 +3,31 @@
 
 # Experiment parameters
 experiment_name: null  # Auto-generated if not specified
-switch_epoch: 100      # Epoch to switch from true to synthetic data
-total_epochs: 200      # Total training epochs
+switch_epoch: 200      # Epoch to switch from true to synthetic data (more pre-training)
+total_epochs: 400      # Total training epochs (2x to see full collapse)
 synthetic_mode: sample # 'mean' or 'sample' - how to generate synthetic Y
 synthetic_ratio: 1.0   # Ratio of synthetic data after switch (1.0 = pure)
 use_autoregressive_synthetic: false  # Use slower autoregressive generation
 
-# Data parameters
+# Data parameters (HARDER TASK)
 prior: gp              # 'gp', 'mix_gp', 'ridge', or 'stroke'
-num_features: 10        # Number of input features (default: 1 for simple regression)
+num_features: 30       # 30D regression (3x harder than previous)
 loss_function: gaussnll  # 'gaussnll', 'mse', 'ce', or 'barnll'
-bptt: 50              # Sequence length
+bptt: 100              # Sequence length (2x longer)
 batch_size: 1000      # Batch size
 steps_per_epoch: 100  # Number of batches per epoch
 
-# Model architecture
-emsize: 512           # Embedding dimension
-nlayers: 6            # Number of transformer layers
-nhid: 1024            # Hidden dimension (default: 2*emsize)
-nhead: 4              # Number of attention heads
+# Model architecture (LARGER for harder task)
+emsize: 768           # Embedding dimension (50% larger)
+nlayers: 8            # Number of transformer layers (more depth)
+nhid: 1536            # Hidden dimension (2*emsize)
+nhead: 8              # Number of attention heads (2x)
 dropout: 0.0          # Dropout rate
 
 # Training parameters
-lr: 0.001             # Learning rate
-warmup_epochs: 50     # Warmup epochs for learning rate
-validation_period: 10 # Save checkpoint every N epochs
+lr: 0.0005            # Lower LR for larger model
+warmup_epochs: 100    # Longer warmup for harder task
+validation_period: 20 # Save checkpoint every N epochs
 permutation_invariant_max_eval_pos: null  # Max eval pos (null uses bptt)
 permutation_invariant_sampling: weighted  # 'weighted' or 'uniform'
 
