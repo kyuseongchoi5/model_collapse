@@ -353,8 +353,7 @@ if __name__ == '__main__':
 
     # Data parameters
     parser.add_argument('--prior', type=str, default='gp',
-                       choices=['gp', 'mix_gp', 'ridge', 'stroke'],
-                       help='Which prior/data source to use')
+                       help='Which prior/data source to use (gp, ridge, stroke, or mix_gp if available)')
     parser.add_argument('--loss_function', default='gaussnll',
                        choices=['gaussnll', 'mse', 'ce', 'barnll'],
                        help='Loss function')
@@ -411,13 +410,21 @@ if __name__ == '__main__':
     if args.nhid is None:
         args.nhid = 2 * args.emsize
 
-    # Select prior
+    # Select prior (only include available priors)
     prior_map = {
         'gp': priors.fast_gp.DataLoader,
         'ridge': priors.ridge.DataLoader,
         'stroke': priors.stroke.DataLoader,
-        'mix_gp': priors.fast_gp_mix.DataLoader,
     }
+
+    # Add optional priors if available
+    if hasattr(priors, 'fast_gp_mix'):
+        prior_map['mix_gp'] = priors.fast_gp_mix.DataLoader
+
+    if args.prior not in prior_map:
+        available = ', '.join(prior_map.keys())
+        raise ValueError(f"Prior '{args.prior}' not available. Available priors: {available}")
+
     prior_class = prior_map[args.prior]
 
     # Select loss function
