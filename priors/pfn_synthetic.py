@@ -203,9 +203,9 @@ def get_batch_simple(batch_size, seq_len, num_features, device=default_device,
     model.to(device)
 
     # Generate all predictions at once
-    # Use single_eval_pos=1 to generate predictions for positions 1..seq_len
+    # Use single_eval_pos=1 to generate predictions for positions 1..seq_len-1
     # (using position 0 as minimal context)
-    single_eval_pos = max(1, seq_len // 2)  # Use half sequence as context
+    single_eval_pos = 1  # Minimal context - predict from position 1 onwards
 
     # Prepare input as (x, y) tuple for unfused mode
     y_context = torch.zeros(seq_len, batch_size, device=device)
@@ -225,7 +225,10 @@ def get_batch_simple(batch_size, seq_len, num_features, device=default_device,
             # Last resort: simple forward with single_eval_pos
             output = model(x_transposed, single_eval_pos=single_eval_pos)
 
-    # Process output based on loss function
+    # Output shape: (seq_len - single_eval_pos, batch_size, n_out)
+    # For single_eval_pos=1, this gives us predictions for positions 1..seq_len-1
+
+    # Process output based on loss function to get y values for positions 1..seq_len-1
     if loss_function in ['gaussnll']:
         if output.shape[-1] == 2:
             mean = output[..., 0]
@@ -235,28 +238,33 @@ def get_batch_simple(batch_size, seq_len, num_features, device=default_device,
             var = torch.ones_like(mean) * 0.1
 
         if sampling_mode == 'sample':
-            y = torch.normal(mean, torch.sqrt(var))
+            y_pred = torch.normal(mean, torch.sqrt(var))
         else:
-            y = mean
+            y_pred = mean
 
     elif loss_function == 'mse':
-        y = output.squeeze(-1) if len(output.shape) > 2 else output
+        y_pred = output.squeeze(-1) if len(output.shape) > 2 else output
 
     elif loss_function == 'ce':
         if sampling_mode == 'sample':
             probs = torch.softmax(output, dim=-1)
-            y = torch.multinomial(probs.view(-1, probs.shape[-1]), num_samples=1).view(seq_len, batch_size).float()
+            y_pred = torch.multinomial(probs.view(-1, probs.shape[-1]), num_samples=1).view(-1, batch_size).float()
         else:
-            y = torch.argmax(output, dim=-1).float()
+            y_pred = torch.argmax(output, dim=-1).float()
 
     elif loss_function in ['barnll', 'adaptivebarnll', 'adaptivefullsupportbarnll']:
         if sampling_mode == 'sample':
             probs = torch.softmax(output, dim=-1)
-            y = torch.multinomial(probs.view(-1, probs.shape[-1]), num_samples=1).view(seq_len, batch_size).float()
+            y_pred = torch.multinomial(probs.view(-1, probs.shape[-1]), num_samples=1).view(-1, batch_size).float()
         else:
-            y = torch.argmax(output, dim=-1).float()
+            y_pred = torch.argmax(output, dim=-1).float()
     else:
         raise ValueError(f"Unknown loss_function: {loss_function}")
+
+    # Pad with a dummy value for position 0 (since we only predicted positions 1..seq_len-1)
+    # Use a zero or sample from a simple prior
+    y_0 = torch.zeros(1, batch_size, device=device)  # Dummy value for position 0
+    y = torch.cat([y_0, y_pred], dim=0)  # Now shape is (seq_len, batch_size)
 
     # Set model back to train mode
     model.train()
