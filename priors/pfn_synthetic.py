@@ -203,17 +203,27 @@ def get_batch_simple(batch_size, seq_len, num_features, device=default_device,
     model.to(device)
 
     # Generate all predictions at once
-    # This is less accurate because model doesn't see its own predictions as context
+    # Use single_eval_pos=1 to generate predictions for positions 1..seq_len
+    # (using position 0 as minimal context)
+    single_eval_pos = max(1, seq_len // 2)  # Use half sequence as context
+
+    # Prepare input as (x, y) tuple for unfused mode
+    y_context = torch.zeros(seq_len, batch_size, device=device)
+
     try:
-        # Try simple forward pass
-        output = model(x_transposed)
+        # Try with tuple input (unfused mode)
+        output = model((x_transposed, y_context), single_eval_pos=single_eval_pos)
     except:
-        # Try with fused zeros
-        fused = torch.cat([
-            x_transposed,
-            torch.zeros(seq_len, batch_size, 1, device=device)
-        ], dim=-1)
-        output = model(fused)
+        # If that fails, try with fused input
+        try:
+            fused = torch.cat([
+                x_transposed,
+                torch.zeros(seq_len, batch_size, 1, device=device)
+            ], dim=-1)
+            output = model(fused, single_eval_pos=single_eval_pos)
+        except:
+            # Last resort: simple forward with single_eval_pos
+            output = model(x_transposed, single_eval_pos=single_eval_pos)
 
     # Process output based on loss function
     if loss_function in ['gaussnll']:
