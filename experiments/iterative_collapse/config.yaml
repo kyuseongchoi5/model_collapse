@@ -10,7 +10,7 @@ synthetic_ratio: 1.0   # Ratio of synthetic data after switch (1.0 = pure)
 use_autoregressive_synthetic: true  # Use autoregressive generation (preserves correlation)
 
 # Data parameters (HARDER TASK)
-prior: fast_gp_mix     # Mixed GP with varying hyperparameters
+prior: mix_gp          # Mixed GP with varying hyperparameters
 num_features: 30       # 30D regression (3x harder than previous)
 loss_function: gaussnll  # 'gaussnll', 'mse', 'ce', or 'barnll'
 bptt: 100              # Sequence length (2x longer)
