@@ -88,27 +88,18 @@ def get_batch(batch_size, seq_len, num_features, device=default_device,
 
         # For first position or if model expects simple input
         if t == 0:
-            # Just predict from the x value
-            # Use a dummy single eval pos
-            output = model(current_x, single_eval_pos=0)
+            # Just predict from the x value with dummy y
+            # Model expects (x, y) tuple when fuse_x_y=False
+            dummy_y = torch.zeros(1, batch_size, device=device)
+            output = model((current_x, dummy_y), single_eval_pos=0)
         else:
             # Concatenate context
             full_x = torch.cat([context_x, current_x], dim=0)
             # Prepare y context with zeros for current position
             full_y = torch.cat([context_y, torch.zeros(1, batch_size, device=device)], dim=0)
 
-            # Create input tuple if model expects it
-            try:
-                # Try with tuple input (unfused mode)
-                output = model((full_x, full_y), single_eval_pos=t)
-            except:
-                # Try with fused input
-                # Fuse x and y: concatenate previous y values with x
-                fused = torch.cat([
-                    full_x,
-                    torch.cat([torch.zeros_like(full_y[:1]), full_y[:-1]], 0).unsqueeze(-1)
-                ], dim=-1)
-                output = model(fused, single_eval_pos=t)
+            # Model expects (x, y) tuple when fuse_x_y=False
+            output = model((full_x, full_y), single_eval_pos=t)
 
         # Extract prediction at current position
         # Output shape depends on loss function
