@@ -7,7 +7,7 @@ switch_epoch: 200      # Epoch to switch from true to synthetic data (more pre-t
 total_epochs: 400      # Total training epochs (2x to see full collapse)
 synthetic_mode: sample # 'mean' or 'sample' - how to generate synthetic Y
 synthetic_ratio: 1.0   # Ratio of synthetic data after switch (1.0 = pure)
-use_autoregressive_synthetic: false  # Use slower autoregressive generation
+use_autoregressive_synthetic: true  # Use autoregressive generation (preserves correlation)
 
 # Data parameters (HARDER TASK)
 prior: gp              # 'gp', 'mix_gp', 'ridge', or 'stroke'
@@ -15,7 +15,7 @@ num_features: 30       # 30D regression (3x harder than previous)
 loss_function: gaussnll  # 'gaussnll', 'mse', 'ce', or 'barnll'
 bptt: 100              # Sequence length (2x longer)
 batch_size: 1000      # Batch size
-steps_per_epoch: 100  # Number of batches per epoch
+steps_per_epoch: 20   # Reduced for autoregressive (5x fewer but ~100x slower per batch)
 
 # Model architecture (LARGER for harder task)
 emsize: 768           # Embedding dimension (50% larger)
