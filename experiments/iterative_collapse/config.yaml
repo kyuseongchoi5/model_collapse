@@ -3,8 +3,8 @@
 
 # Experiment parameters
 experiment_name: null  # Auto-generated if not specified
-switch_epoch: 200      # Epoch to switch from true to synthetic data (more pre-training)
-total_epochs: 400      # Total training epochs (2x to see full collapse)
+switch_epoch: 100      # Epoch to switch from true to synthetic data (more pre-training)
+total_epochs: 200      # Total training epochs (2x to see full collapse)
 synthetic_mode: sample # 'mean' or 'sample' - how to generate synthetic Y
 synthetic_ratio: 1.0   # Ratio of synthetic data after switch (1.0 = pure)
 use_autoregressive_synthetic: true  # Use autoregressive generation (preserves correlation)
