@@ -399,6 +399,8 @@ if __name__ == '__main__':
                        default='./experiments/iterative_collapse/checkpoints')
     parser.add_argument('--metrics_dir', type=str,
                        default='./experiments/iterative_collapse/metrics')
+    parser.add_argument('--generate_plots', action='store_true',
+                       help='Automatically generate plots after training')
 
     # Parse arguments
     args_config, remaining = config_parser.parse_known_args()
@@ -412,7 +414,12 @@ if __name__ == '__main__':
     # Generate experiment name if not provided
     if args.experiment_name is None:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        args.experiment_name = f'{args.prior}_switch{args.switch_epoch}_{args.synthetic_mode}_{timestamp}'
+        auto_str = 'auto' if args.use_autoregressive_synthetic else 'noauto'
+        args.experiment_name = (
+            f'{args.prior}_d{args.num_features}_seq{args.bptt}_'
+            f'sw{args.switch_epoch}of{args.total_epochs}_{auto_str}_'
+            f'{args.synthetic_mode}_r{args.synthetic_ratio}_{timestamp}'
+        )
 
     # Set nhid if not specified
     if args.nhid is None:
@@ -525,5 +532,136 @@ if __name__ == '__main__':
         metrics_dir=args.metrics_dir,
         experiment_name=args.experiment_name,
     )
+
+    # Generate plots if requested
+    if args.generate_plots:
+        print("\nGenerating plots...")
+        try:
+            import matplotlib
+            matplotlib.use('Agg')  # Non-interactive backend for server
+            import matplotlib.pyplot as plt
+            from pathlib import Path
+
+            # Create plots directory
+            plots_dir = Path('./experiments/iterative_collapse/plots')
+            plots_dir.mkdir(parents=True, exist_ok=True)
+
+            # Load metrics from saved file
+            metrics_file = Path(args.metrics_dir) / f'{args.experiment_name}_metrics.json'
+            import json
+            with open(metrics_file, 'r') as f:
+                metrics_data = json.load(f)
+
+            # Create figure with 2x2 subplots
+            fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+            fig.suptitle(f'Model Collapse Analysis: {args.experiment_name}', fontsize=14, fontweight='bold')
+
+            epochs = metrics_data['epochs']
+            train_loss = metrics_data['train_loss']
+            test_loss = metrics_data['test_loss_true']
+            variance = metrics_data['prediction_variance']
+            lr_vals = metrics_data['lr']
+
+            # Plot 1: Train vs Test Loss
+            ax1 = axes[0, 0]
+            pre_switch = [i for i, e in enumerate(epochs) if e < args.switch_epoch]
+            post_switch = [i for i, e in enumerate(epochs) if e >= args.switch_epoch]
+
+            if pre_switch:
+                ax1.plot([epochs[i] for i in pre_switch], [train_loss[i] for i in pre_switch],
+                        'b-', alpha=0.7, linewidth=1.5, label='Train (True Data)')
+                ax1.plot([epochs[i] for i in pre_switch], [test_loss[i] for i in pre_switch],
+                        'g-', alpha=0.7, linewidth=1.5, label='Test (True Data)')
+            if post_switch:
+                ax1.plot([epochs[i] for i in post_switch], [train_loss[i] for i in post_switch],
+                        'b--', alpha=0.7, linewidth=1.5, label='Train (Synthetic)')
+                ax1.plot([epochs[i] for i in post_switch], [test_loss[i] for i in post_switch],
+                        'r-', alpha=0.7, linewidth=1.5, label='Test (Synthetic)')
+
+            ax1.axvline(args.switch_epoch, color='black', linestyle='--', linewidth=2, alpha=0.5, label='Switch')
+            ax1.set_xlabel('Epoch')
+            ax1.set_ylabel('Loss')
+            ax1.set_title('Train vs Test Loss')
+            ax1.legend(fontsize=8)
+            ax1.grid(True, alpha=0.3)
+            ax1.set_yscale('log')
+
+            # Plot 2: Variance Trajectory
+            ax2 = axes[0, 1]
+            if pre_switch:
+                ax2.plot([epochs[i] for i in pre_switch], [variance[i] for i in pre_switch],
+                        'g-', linewidth=2, label='True Data')
+            if post_switch:
+                ax2.plot([epochs[i] for i in post_switch], [variance[i] for i in post_switch],
+                        'r-', linewidth=2, label='Synthetic Data')
+            ax2.axvline(args.switch_epoch, color='black', linestyle='--', linewidth=2, alpha=0.5)
+            ax2.set_xlabel('Epoch')
+            ax2.set_ylabel('Prediction Variance')
+            ax2.set_title('Variance Trajectory (Mode Collapse Indicator)')
+            ax2.legend()
+            ax2.grid(True, alpha=0.3)
+            ax2.set_yscale('log')
+
+            # Plot 3: Learning Rate Schedule
+            ax3 = axes[1, 0]
+            ax3.plot(epochs, lr_vals, 'purple', linewidth=2)
+            ax3.axvline(args.switch_epoch, color='black', linestyle='--', linewidth=2, alpha=0.5)
+            ax3.set_xlabel('Epoch')
+            ax3.set_ylabel('Learning Rate')
+            ax3.set_title('Learning Rate Schedule')
+            ax3.grid(True, alpha=0.3)
+
+            # Plot 4: Summary Statistics
+            ax4 = axes[1, 1]
+            ax4.axis('off')
+
+            pre_baseline = test_loss[args.switch_epoch - 1] if args.switch_epoch > 0 else test_loss[0]
+            post_final = test_loss[-1]
+            var_baseline = variance[args.switch_epoch - 1] if args.switch_epoch > 0 else variance[0]
+            var_final = variance[-1]
+
+            summary_text = f"""
+EXPERIMENT SUMMARY
+
+Configuration:
+  Prior: {args.prior}
+  Dimensions: {args.num_features}
+  Sequence Length: {args.bptt}
+  Switch Epoch: {args.switch_epoch}/{args.total_epochs}
+  Autoregressive: {args.use_autoregressive_synthetic}
+  Synthetic Ratio: {args.synthetic_ratio}
+
+Pre-Switch (Epoch {args.switch_epoch}):
+  Test Loss: {pre_baseline:.4f}
+  Variance: {var_baseline:.4f}
+
+Post-Switch (Epoch {args.total_epochs}):
+  Test Loss: {post_final:.4f}
+  Variance: {var_final:.4f}
+
+Degradation:
+  Test Loss: {post_final/pre_baseline:.2f}x worse
+  Variance: {var_final/var_baseline:.2f}x change
+
+Max Test Loss: {max(test_loss):.2f}
+Min Train Loss: {min(train_loss):.4f}
+"""
+            ax4.text(0.05, 0.95, summary_text, transform=ax4.transAxes, fontsize=9,
+                    verticalalignment='top', fontfamily='monospace',
+                    bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3))
+
+            plt.tight_layout()
+
+            # Save plot
+            plot_path = plots_dir / f'{args.experiment_name}.png'
+            plt.savefig(plot_path, dpi=150, bbox_inches='tight')
+            plt.close()
+
+            print(f"✓ Plot saved to: {plot_path}")
+
+        except Exception as e:
+            print(f"✗ Failed to generate plots: {e}")
+            import traceback
+            traceback.print_exc()
 
     print("\nDone!")

@@ -43,6 +43,7 @@ extra_prior_kwargs_dict:
 # Paths
 save_dir: ./experiments/iterative_collapse/checkpoints
 metrics_dir: ./experiments/iterative_collapse/metrics
+generate_plots: true  # Automatically generate plots after training
 
 
 # ============================================================================
