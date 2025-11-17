@@ -1,0 +1,45 @@
+# Experiment 2: Simple GP at 10D with 50% synthetic data
+# Tests if mixing real and synthetic data prevents collapse
+
+experiment_name: null  # Auto-generated
+switch_epoch: 100
+total_epochs: 200
+synthetic_mode: sample
+synthetic_ratio: 0.5   # 50% real + 50% synthetic after switch
+use_autoregressive_synthetic: true
+
+# Data parameters
+prior: gp              # Simple GP (fixed hyperparameters)
+num_features: 10       # 10D (easier task, clean convergence)
+loss_function: gaussnll
+bptt: 50               # Shorter sequence for faster training
+batch_size: 1000
+steps_per_epoch: 100   # Simple GP is faster than mix_gp
+
+# Model architecture (moderate size)
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 50
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Extra prior kwargs
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+
+# Paths
+save_dir: ./experiments/iterative_collapse/checkpoints
+metrics_dir: ./experiments/iterative_collapse/metrics
+generate_plots: true

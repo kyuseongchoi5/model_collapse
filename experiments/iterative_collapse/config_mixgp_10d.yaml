@@ -1,0 +1,45 @@
+# Experiment 1: Mix GP at 10D (easier task)
+# Tests if Mix GP resists collapse when it actually converges properly
+
+experiment_name: null  # Auto-generated
+switch_epoch: 100
+total_epochs: 200
+synthetic_mode: sample
+synthetic_ratio: 1.0  # 100% synthetic after switch
+use_autoregressive_synthetic: true
+
+# Data parameters
+prior: mix_gp          # Mixed GP with varying hyperparameters
+num_features: 10       # 10D (easier than 30D, should converge)
+loss_function: gaussnll
+bptt: 50               # Shorter sequence for faster training
+batch_size: 1000
+steps_per_epoch: 20    # Mix GP is slower
+
+# Model architecture (moderate size)
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 50
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Extra prior kwargs
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+
+# Paths
+save_dir: ./experiments/iterative_collapse/checkpoints
+metrics_dir: ./experiments/iterative_collapse/metrics
+generate_plots: true
