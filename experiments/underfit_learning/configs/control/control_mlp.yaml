@@ -1,0 +1,46 @@
+# CONTROL Experiment: Hard Task with Standard MLP (True Data Only)
+# Baseline to compare against synthetic data experiments
+
+experiment_name: null  # Auto-generated
+experiment_prefix: control
+switch_epoch: 999      # Never switch - always use true data
+total_epochs: 300      # Same duration as synthetic experiments
+synthetic_mode: null   # Not used
+synthetic_ratio: 0.0   # No synthetic data
+use_autoregressive_synthetic: false
+
+# Hard task parameters (same as synthetic experiments)
+prior: mlp
+num_features: 100
+loss_function: mse
+bptt: 100
+batch_size: 1000
+steps_per_epoch: 100
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 30
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Standard MLP diversity (defaults)
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+
+# Paths
+save_dir: ./experiments/underfit_learning/checkpoints
+metrics_dir: ./experiments/underfit_learning/metrics
+generate_plots: true

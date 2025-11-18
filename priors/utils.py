@@ -69,6 +69,15 @@ uniform_int_sampler_f = lambda a, b : lambda : np.random.randint(a, b)
 zipf_sampler_f = lambda a, b, c : lambda : min(b + np.random.zipf(a), c)
 scaled_beta_sampler_f = lambda a, b, scale, minimum : lambda : minimum + round(beta_sampler_f(a, b)() * (scale - minimum + 1) - 0.5)
 
+def random_activation_sampler():
+    """Returns a sampler that randomly selects an activation function.
+
+    Returns:
+        A callable that returns a randomly selected activation class (ReLU, Tanh, ELU, GELU, LeakyReLU)
+    """
+    activations = [torch.nn.ReLU, torch.nn.Tanh, torch.nn.ELU, torch.nn.GELU, torch.nn.LeakyReLU]
+    return lambda: random.choice(activations)
+
 
 def normalize_data(data):
     mean = data.mean(0)

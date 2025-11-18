@@ -1,0 +1,55 @@
+# CONTROL Experiment: Hard Task with ULTRA DIVERSE Mix GP (True Data Only)
+# Baseline to compare against ultra diverse synthetic data experiments
+
+experiment_name: null  # Auto-generated
+experiment_prefix: control_ultra
+switch_epoch: 999      # Never switch - always use true data
+total_epochs: 300      # Same duration as synthetic experiments
+synthetic_mode: null   # Not used
+synthetic_ratio: 0.0   # No synthetic data
+use_autoregressive_synthetic: false
+
+# Hard task parameters (same as synthetic experiments)
+prior: mix_gp
+num_features: 100
+loss_function: gaussnll
+bptt: 100
+batch_size: 1000
+steps_per_epoch: 20
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 30
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# ULTRA DIVERSE Mix GP (same as synthetic experiment)
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+  hyperparameters:
+    lengthscale_concentration: 0.3
+    lengthscale_rate: 0.5
+    outputscale_concentration: 0.05
+    outputscale_rate: 0.01
+    noise_concentration: 0.3
+    noise_rate: 0.005
+    nu: "random"
+    kernel_type: "random"
+
+# Paths
+save_dir: ./experiments/underfit_learning/checkpoints
+metrics_dir: ./experiments/underfit_learning/metrics
+generate_plots: true

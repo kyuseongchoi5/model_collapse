@@ -1,0 +1,53 @@
+# Experiment: Hard Task with ULTRA DIVERSE MLP (Synthetic Switch)
+# Tests if maximum prior diversity makes synthetic data more helpful
+
+experiment_name: null  # Auto-generated
+experiment_prefix: hard_ultra
+switch_epoch: 100      # Switch when still underfit
+total_epochs: 300      # Long enough to see if improvement continues
+synthetic_mode: sample
+synthetic_ratio: 1.0
+use_autoregressive_synthetic: true
+
+# Hard task parameters
+prior: mlp
+num_features: 100      # vs 30 in original experiments
+loss_function: mse
+bptt: 100             # vs 50 in original experiments
+batch_size: 1000
+steps_per_epoch: 100
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 30      # vs 50 in original - less converged
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# ULTRA DIVERSE MLP - Maximum hyperparameter variation
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+  hyperparameters:
+    num_layers: "uniform_int(3, 8)"        # 3-7 layers (vs default 3)
+    hidden_dim: "uniform_int(50, 500)"     # 50-499 neurons (vs default 100)
+    activation: "random"                    # Random activation (vs default ReLU)
+    init_std: "gamma(2.0, 20.0)"           # Wide init variation (vs default 0.1)
+    noise_std: "gamma(2.0, 20.0)"          # Wide noise variation (vs default 0.1)
+    dropout: "beta(1.0, 5.0)"              # Variable dropout (vs default 0.0)
+
+# Paths
+save_dir: ./experiments/underfit_learning/checkpoints
+metrics_dir: ./experiments/underfit_learning/metrics
+generate_plots: true

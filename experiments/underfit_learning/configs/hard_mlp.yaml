@@ -1,0 +1,46 @@
+# Experiment: Hard Task with Standard MLP (Synthetic Switch)
+# Tests if synthetic data helps learning when model is underfit
+
+experiment_name: null  # Auto-generated
+experiment_prefix: hard
+switch_epoch: 100      # Switch when still underfit
+total_epochs: 300      # Long enough to see if improvement continues
+synthetic_mode: sample
+synthetic_ratio: 1.0
+use_autoregressive_synthetic: true
+
+# Hard task parameters
+prior: mlp
+num_features: 100      # vs 30 in original experiments
+loss_function: mse
+bptt: 100             # vs 50 in original experiments
+batch_size: 1000
+steps_per_epoch: 100
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 30      # vs 50 in original - less converged
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Standard MLP diversity (defaults)
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+
+# Paths
+save_dir: ./experiments/underfit_learning/checkpoints
+metrics_dir: ./experiments/underfit_learning/metrics
+generate_plots: true

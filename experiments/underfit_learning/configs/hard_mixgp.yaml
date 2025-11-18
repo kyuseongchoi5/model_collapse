@@ -1,0 +1,54 @@
+# Experiment: Hard Task with Standard Mix GP (Synthetic Switch)
+# Tests if synthetic data helps learning when model is underfit
+
+experiment_name: null  # Auto-generated
+experiment_prefix: hard
+switch_epoch: 100      # Switch when still underfit
+total_epochs: 300      # Long enough to see if improvement continues
+synthetic_mode: sample
+synthetic_ratio: 1.0
+use_autoregressive_synthetic: true
+
+# Hard task parameters
+prior: mix_gp
+num_features: 100      # vs 30 in original experiments
+loss_function: gaussnll
+bptt: 100             # vs 50 in original experiments
+batch_size: 1000
+steps_per_epoch: 20
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 30      # vs 50 in original - less converged
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Standard Mix GP diversity (moderate)
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+  hyperparameters:
+    lengthscale_concentration: 3.0
+    lengthscale_rate: 6.0
+    outputscale_concentration: 0.5
+    outputscale_rate: 0.15
+    noise_concentration: 1.1
+    noise_rate: 0.05
+    nu: 2.5                # Fixed smoothness
+
+# Paths
+save_dir: ./experiments/underfit_learning/checkpoints
+metrics_dir: ./experiments/underfit_learning/metrics
+generate_plots: true

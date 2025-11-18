@@ -1,0 +1,56 @@
+# Experiment: Hard Task with ULTRA DIVERSE Mix GP (Synthetic Switch)
+# Tests if maximum prior diversity makes synthetic data more helpful
+
+experiment_name: null  # Auto-generated
+experiment_prefix: hard_ultra
+switch_epoch: 100      # Switch when still underfit
+total_epochs: 300      # Long enough to see if improvement continues
+synthetic_mode: sample
+synthetic_ratio: 1.0
+use_autoregressive_synthetic: true
+
+# Hard task parameters
+prior: mix_gp
+num_features: 100      # vs 30 in original experiments
+loss_function: gaussnll
+bptt: 100             # vs 50 in original experiments
+batch_size: 1000
+steps_per_epoch: 20
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 30      # vs 50 in original - less converged
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# ULTRA DIVERSE Mix GP - Maximum hyperparameter variation + kernel diversity
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+  hyperparameters:
+    # Even wider distributions than very_diverse config
+    lengthscale_concentration: 0.3         # vs 1.0 in very_diverse (wider tail)
+    lengthscale_rate: 0.5                  # vs 2.0 in very_diverse (wider range)
+    outputscale_concentration: 0.05        # vs 0.2 in very_diverse (wider tail)
+    outputscale_rate: 0.01                 # vs 0.05 in very_diverse (wider range)
+    noise_concentration: 0.3               # vs 0.8 in very_diverse (wider tail)
+    noise_rate: 0.005                      # vs 0.03 in very_diverse (wider range)
+    nu: "random"                           # Random smoothness: {0.5, 1.5, 2.5}
+    kernel_type: "random"                  # NEW: Random kernel type: matern/rbf/periodic/linear
+
+# Paths
+save_dir: ./experiments/underfit_learning/checkpoints
+metrics_dir: ./experiments/underfit_learning/metrics
+generate_plots: true

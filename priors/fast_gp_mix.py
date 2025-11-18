@@ -35,25 +35,81 @@ def get_model(x, y, hyperparameters: dict, sample=True):
         ),
     )
 
-    # Handle nu parameter - can be fixed value or "random" for sampling
-    nu_param = hyperparameters.get('nu', 2.5)
-    if nu_param == "random":
-        # Randomly sample from valid Matern nu values
-        nu_value = random.choice([0.5, 1.5, 2.5])
-    else:
-        nu_value = nu_param
+    # Kernel type selection - supports diversity across kernel families
+    kernel_type = hyperparameters.get('kernel_type', 'matern')
 
+    if kernel_type == 'random':
+        # Randomly select kernel type for maximum diversity
+        kernel_type = random.choice(['matern', 'rbf', 'periodic', 'linear'])
+
+    # Build base kernel based on selected type
+    if kernel_type == 'matern':
+        # Handle nu parameter - can be fixed value or "random" for sampling
+        nu_param = hyperparameters.get('nu', 2.5)
+        if nu_param == "random":
+            # Randomly sample from valid Matern nu values
+            nu_value = random.choice([0.5, 1.5, 2.5])
+        else:
+            nu_value = nu_param
+
+        base_kernel = gpytorch.kernels.MaternKernel(
+            nu=nu_value,
+            ard_num_dims=x.shape[-1],
+            batch_shape=aug_batch_shape,
+            lengthscale_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('lengthscale_concentration', 3.0),
+                hyperparameters.get('lengthscale_rate', 6.0)
+            ),
+        )
+
+    elif kernel_type == 'rbf':
+        base_kernel = gpytorch.kernels.RBFKernel(
+            ard_num_dims=x.shape[-1],
+            batch_shape=aug_batch_shape,
+            lengthscale_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('lengthscale_concentration', 3.0),
+                hyperparameters.get('lengthscale_rate', 6.0)
+            ),
+        )
+
+    elif kernel_type == 'periodic':
+        base_kernel = gpytorch.kernels.PeriodicKernel(
+            ard_num_dims=x.shape[-1],
+            batch_shape=aug_batch_shape,
+            lengthscale_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('lengthscale_concentration', 3.0),
+                hyperparameters.get('lengthscale_rate', 6.0)
+            ),
+            period_length_prior=gpytorch.priors.GammaPrior(1.0, 1.0),
+        )
+
+    elif kernel_type == 'linear':
+        base_kernel = gpytorch.kernels.LinearKernel(
+            num_dimensions=x.shape[-1],
+            batch_shape=aug_batch_shape,
+            variance_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('outputscale_concentration', .5),
+                hyperparameters.get('outputscale_rate', 0.15)
+            ),
+        )
+
+    else:
+        raise ValueError(f"Unknown kernel_type: {kernel_type}. Must be one of: 'matern', 'rbf', 'periodic', 'linear', 'random'")
+
+    # Wrap base kernel in ScaleKernel
+    covar_module = gpytorch.kernels.ScaleKernel(
+        base_kernel,
+        batch_shape=aug_batch_shape,
+        outputscale_prior=gpytorch.priors.GammaPrior(
+            hyperparameters.get('outputscale_concentration', .5),
+            hyperparameters.get('outputscale_rate', 0.15)
+        ),
+    )
+
+    # Build model with selected kernel
     model = SingleTaskGP(x, y.unsqueeze(-1),
-                         covar_module=gpytorch.kernels.ScaleKernel(
-                            gpytorch.kernels.MaternKernel(
-                                nu=nu_value,
-                                ard_num_dims=x.shape[-1],
-                                batch_shape=aug_batch_shape,
-                                lengthscale_prior=gpytorch.priors.GammaPrior(hyperparameters.get('lengthscale_concentration',3.0), hyperparameters.get('lengthscale_rate',6.0)),
-                            ),
-                            batch_shape=aug_batch_shape,
-                            outputscale_prior=gpytorch.priors.GammaPrior(hyperparameters.get('outputscale_concentration',.5), hyperparameters.get('outputscale_rate',0.15)),
-                        ), likelihood=likelihood)
+                         covar_module=covar_module,
+                         likelihood=likelihood)
 
     likelihood = model.likelihood
     if sample:

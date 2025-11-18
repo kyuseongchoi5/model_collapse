@@ -409,6 +409,26 @@ if __name__ == '__main__':
     if args_config.config:
         with open(args_config.config, 'r') as f:
             cfg = yaml.safe_load(f)
+
+            # Process hyperparameters if using underfit_learning configs
+            # This converts string specifications like "uniform_int(3, 8)" to callables
+            if 'extra_prior_kwargs_dict' in cfg and 'hyperparameters' in cfg['extra_prior_kwargs_dict']:
+                try:
+                    # Try to import config_utils for advanced hyperparameter processing
+                    from pathlib import Path
+                    underfit_path = Path(__file__).parent.parent / 'underfit_learning'
+                    if underfit_path.exists():
+                        sys.path.insert(0, str(underfit_path))
+                        from config_utils import process_hyperparameters
+                        cfg['extra_prior_kwargs_dict']['hyperparameters'] = process_hyperparameters(
+                            cfg['extra_prior_kwargs_dict']['hyperparameters']
+                        )
+                        print("✓ Processed hyperparameters using config_utils")
+                except ImportError:
+                    # If config_utils not available, hyperparameters should already be callables
+                    print("Note: config_utils not found, assuming hyperparameters are already callables")
+                    pass
+
             parser.set_defaults(**cfg)
 
     args = parser.parse_args(remaining)
