@@ -117,18 +117,22 @@ This runs all 8 experiments sequentially. **Warning**: This will take 10-20+ hou
 
 ### Run Individual Experiments
 ```bash
+cd experiments/underfit_learning
+
 # Synthetic experiments
-python3 ../iterative_collapse/train_with_switch.py --config configs/hard_mlp.yaml
-python3 ../iterative_collapse/train_with_switch.py --config configs/hard_ultra_diverse_mlp.yaml
-python3 ../iterative_collapse/train_with_switch.py --config configs/hard_mixgp.yaml
-python3 ../iterative_collapse/train_with_switch.py --config configs/hard_ultra_diverse_mixgp.yaml
+python train.py --config configs/hard_mlp.yaml
+python train.py --config configs/hard_ultra_diverse_mlp.yaml
+python train.py --config configs/hard_mixgp.yaml
+python train.py --config configs/hard_ultra_diverse_mixgp.yaml
 
 # Control experiments
-python3 ../iterative_collapse/train_with_switch.py --config configs/control/control_mlp.yaml
-python3 ../iterative_collapse/train_with_switch.py --config configs/control/control_ultra_diverse_mlp.yaml
-python3 ../iterative_collapse/train_with_switch.py --config configs/control/control_mixgp.yaml
-python3 ../iterative_collapse/train_with_switch.py --config configs/control/control_ultra_diverse_mixgp.yaml
+python train.py --config configs/control/control_mlp.yaml
+python train.py --config configs/control/control_ultra_diverse_mlp.yaml
+python train.py --config configs/control/control_mixgp.yaml
+python train.py --config configs/control/control_ultra_diverse_mixgp.yaml
 ```
+
+The `train.py` script is a convenience wrapper that calls the main training script from the correct location.
 
 ## Results Location
 

@@ -16,10 +16,9 @@ echo ""
 echo "Each experiment takes significant time. Estimated total: 10-20+ hours"
 echo ""
 
-# Get the project root (two levels up from this script)
+# Get the script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
-TRAIN_SCRIPT="$PROJECT_ROOT/experiments/iterative_collapse/train_with_switch.py"
+TRAIN_SCRIPT="$SCRIPT_DIR/train.py"
 
 # Check if train script exists
 if [ ! -f "$TRAIN_SCRIPT" ]; then
