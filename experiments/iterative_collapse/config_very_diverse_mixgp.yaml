@@ -46,7 +46,7 @@ extra_prior_kwargs_dict:
     outputscale_rate: 0.05           # Lower (was 0.15) - wider variance
     noise_concentration: 0.8         # Lower (was 1.1) - wider variance
     noise_rate: 0.03                 # Lower (was 0.05) - wider variance
-    nu: null                         # Will vary instead of fixing at 2.5
+    nu: 1.5                          # Use 1.5 for more diversity (default is 2.5)
 
 # Paths
 save_dir: ./experiments/iterative_collapse/checkpoints
