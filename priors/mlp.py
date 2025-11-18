@@ -20,13 +20,23 @@ def canonical_pre_processing(x, canonical_args):
     return x
 
 
-DEFAULT_NUM_LAYERS = 2
-DEFAULT_HIDDEN_DIM = 100
+DEFAULT_NUM_LAYERS = lambda: 3  # Need at least 3 layers (assertion at line 111)
+DEFAULT_HIDDEN_DIM = lambda: 100
 DEFAULT_ACTIVATION_MODULE = torch.nn.ReLU
-DEFAULT_INIT_STD = .1
-DEFAULT_HIDDEN_NOISE_STD = .1
-DEFAULT_FIXED_DROPOUT = 0.
+DEFAULT_INIT_STD = lambda: .1
+DEFAULT_HIDDEN_NOISE_STD = lambda: .1
+DEFAULT_FIXED_DROPOUT = lambda: 0.
 DEFAULT_IS_BINARY_CLASSIFICATION = False
+DEFAULT_NUM_FEATURES_USED = None  # Will be set to num_features
+DEFAULT_CAUSES_SAMPLER = None
+DEFAULT_IS_CAUSAL = False
+DEFAULT_PRE_SAMPLE_CAUSES = False
+DEFAULT_PRE_SAMPLE_WEIGHTS = False
+DEFAULT_Y_IS_EFFECT = False
+DEFAULT_ORDER_Y = False
+DEFAULT_NORMALIZE_BY_USED_FEATURES = False
+DEFAULT_CATEGORICAL_FEATURES_SAMPLER = lambda x: ([], [])
+DEFAULT_NAN_PROB = 0.0
 
 
 class GaussianNoise(nn.Module):
@@ -59,12 +69,16 @@ def categorical_features_sampler(max_features):
     return features, ordinal
 
 
-def get_batch(batch_size, seq_len, num_features, device=default_device, hyperparameters=(DEFAULT_NUM_LAYERS, DEFAULT_HIDDEN_DIM, DEFAULT_ACTIVATION_MODULE, DEFAULT_INIT_STD, DEFAULT_HIDDEN_NOISE_STD, DEFAULT_FIXED_DROPOUT, DEFAULT_IS_BINARY_CLASSIFICATION),
+def get_batch(batch_size, seq_len, num_features, device=default_device, hyperparameters=None,
               batch_size_per_gp_sample=None, num_outputs=1, canonical_args=None, sampling='normal'):
     assert num_outputs == 1
 
-    # Handle dict-based hyperparameters (for compatibility with config system)
+    # Handle None or dict-based hyperparameters (for compatibility with config system)
+    if hyperparameters is None:
+        hyperparameters = {}
+
     if isinstance(hyperparameters, dict):
+        # Build complete hyperparameters tuple from dict with defaults
         hyperparameters = (
             hyperparameters.get('num_layers', DEFAULT_NUM_LAYERS),
             hyperparameters.get('hidden_dim', DEFAULT_HIDDEN_DIM),
@@ -72,17 +86,17 @@ def get_batch(batch_size, seq_len, num_features, device=default_device, hyperpar
             hyperparameters.get('init_std', DEFAULT_INIT_STD),
             hyperparameters.get('noise_std', DEFAULT_HIDDEN_NOISE_STD),
             hyperparameters.get('dropout', DEFAULT_FIXED_DROPOUT),
-            hyperparameters.get('is_binary_classification', False),
+            hyperparameters.get('is_binary_classification', DEFAULT_IS_BINARY_CLASSIFICATION),
             hyperparameters.get('num_features_used', lambda: num_features),
-            hyperparameters.get('causes_sampler', None),
-            hyperparameters.get('is_causal', False),
-            hyperparameters.get('pre_sample_causes', False),
-            hyperparameters.get('pre_sample_weights', False),
-            hyperparameters.get('y_is_effect', False),
-            hyperparameters.get('order_y', False),
-            hyperparameters.get('normalize_by_used_features', False),
-            hyperparameters.get('categorical_features_sampler', lambda x: ([], [])),
-            hyperparameters.get('nan_prob', 0.0),
+            hyperparameters.get('causes_sampler', DEFAULT_CAUSES_SAMPLER),
+            hyperparameters.get('is_causal', DEFAULT_IS_CAUSAL),
+            hyperparameters.get('pre_sample_causes', DEFAULT_PRE_SAMPLE_CAUSES),
+            hyperparameters.get('pre_sample_weights', DEFAULT_PRE_SAMPLE_WEIGHTS),
+            hyperparameters.get('y_is_effect', DEFAULT_Y_IS_EFFECT),
+            hyperparameters.get('order_y', DEFAULT_ORDER_Y),
+            hyperparameters.get('normalize_by_used_features', DEFAULT_NORMALIZE_BY_USED_FEATURES),
+            hyperparameters.get('categorical_features_sampler', DEFAULT_CATEGORICAL_FEATURES_SAMPLER),
+            hyperparameters.get('nan_prob', DEFAULT_NAN_PROB),
         )
 
     num_layers_sampler, hidden_dim_sampler, activation_module, init_std_sampler, noise_std_sampler, dropout_prob_sampler, is_binary_classification, num_features_used_sampler, causes_sampler, is_causal, pre_sample_causes, pre_sample_weights, y_is_effect, order_y, normalize_by_used_features, categorical_features_sampler, nan_prob = hyperparameters
