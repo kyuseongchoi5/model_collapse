@@ -339,6 +339,8 @@ if __name__ == '__main__':
     # Experiment parameters
     parser.add_argument('--experiment_name', type=str, default=None,
                        help='Name for this experiment (default: auto-generated)')
+    parser.add_argument('--experiment_prefix', type=str, default='',
+                       help='Prefix to add to auto-generated experiment name')
     parser.add_argument('--switch_epoch', type=int, default=100,
                        help='Epoch at which to switch to synthetic data')
     parser.add_argument('--total_epochs', type=int, default=200,
@@ -415,8 +417,9 @@ if __name__ == '__main__':
     if args.experiment_name is None:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         auto_str = 'auto' if args.use_autoregressive_synthetic else 'noauto'
+        prefix = f'{args.experiment_prefix}_' if args.experiment_prefix else ''
         args.experiment_name = (
-            f'{args.prior}_d{args.num_features}_seq{args.bptt}_'
+            f'{prefix}{args.prior}_d{args.num_features}_seq{args.bptt}_'
             f'sw{args.switch_epoch}of{args.total_epochs}_{auto_str}_'
             f'{args.synthetic_mode}_r{args.synthetic_ratio}_{timestamp}'
         )
@@ -439,6 +442,8 @@ if __name__ == '__main__':
     # Add optional priors if available
     if hasattr(priors, 'fast_gp_mix'):
         prior_map['mix_gp'] = priors.fast_gp_mix.DataLoader
+    if hasattr(priors, 'mlp'):
+        prior_map['mlp'] = priors.mlp.DataLoader
 
     if args.prior not in prior_map:
         available = ', '.join(prior_map.keys())
