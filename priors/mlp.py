@@ -62,6 +62,29 @@ def categorical_features_sampler(max_features):
 def get_batch(batch_size, seq_len, num_features, device=default_device, hyperparameters=(DEFAULT_NUM_LAYERS, DEFAULT_HIDDEN_DIM, DEFAULT_ACTIVATION_MODULE, DEFAULT_INIT_STD, DEFAULT_HIDDEN_NOISE_STD, DEFAULT_FIXED_DROPOUT, DEFAULT_IS_BINARY_CLASSIFICATION),
               batch_size_per_gp_sample=None, num_outputs=1, canonical_args=None, sampling='normal'):
     assert num_outputs == 1
+
+    # Handle dict-based hyperparameters (for compatibility with config system)
+    if isinstance(hyperparameters, dict):
+        hyperparameters = (
+            hyperparameters.get('num_layers', DEFAULT_NUM_LAYERS),
+            hyperparameters.get('hidden_dim', DEFAULT_HIDDEN_DIM),
+            hyperparameters.get('activation', DEFAULT_ACTIVATION_MODULE),
+            hyperparameters.get('init_std', DEFAULT_INIT_STD),
+            hyperparameters.get('noise_std', DEFAULT_HIDDEN_NOISE_STD),
+            hyperparameters.get('dropout', DEFAULT_FIXED_DROPOUT),
+            hyperparameters.get('is_binary_classification', False),
+            hyperparameters.get('num_features_used', lambda: num_features),
+            hyperparameters.get('causes_sampler', None),
+            hyperparameters.get('is_causal', False),
+            hyperparameters.get('pre_sample_causes', False),
+            hyperparameters.get('pre_sample_weights', False),
+            hyperparameters.get('y_is_effect', False),
+            hyperparameters.get('order_y', False),
+            hyperparameters.get('normalize_by_used_features', False),
+            hyperparameters.get('categorical_features_sampler', lambda x: ([], [])),
+            hyperparameters.get('nan_prob', 0.0),
+        )
+
     num_layers_sampler, hidden_dim_sampler, activation_module, init_std_sampler, noise_std_sampler, dropout_prob_sampler, is_binary_classification, num_features_used_sampler, causes_sampler, is_causal, pre_sample_causes, pre_sample_weights, y_is_effect, order_y, normalize_by_used_features, categorical_features_sampler, nan_prob = hyperparameters
 
     # if is_binary_classification:
