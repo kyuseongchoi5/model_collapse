@@ -439,6 +439,8 @@ if __name__ == '__main__':
     # Add optional priors if available
     if hasattr(priors, 'fast_gp_mix'):
         prior_map['mix_gp'] = priors.fast_gp_mix.DataLoader
+    if hasattr(priors, 'mlp'):
+        prior_map['mlp'] = priors.mlp.DataLoader
 
     if args.prior not in prior_map:
         available = ', '.join(prior_map.keys())

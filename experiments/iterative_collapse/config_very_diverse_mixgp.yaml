@@ -1,0 +1,53 @@
+# Experiment: Very Diverse Mix GP
+# Tests if extreme diversity leads to even better collapse resistance
+
+experiment_name: null  # Auto-generated
+switch_epoch: 100
+total_epochs: 200
+synthetic_mode: sample
+synthetic_ratio: 1.0
+use_autoregressive_synthetic: true
+
+# Data parameters
+prior: mix_gp
+num_features: 10       # 10D for faster training and comparison
+loss_function: gaussnll
+bptt: 50
+batch_size: 1000
+steps_per_epoch: 20
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 50
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# Extra prior kwargs - DIVERSE hyperparameters
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+  hyperparameters:
+    lengthscale_concentration: 1.0  # Much lower (was 3.0) - wider variance
+    lengthscale_rate: 2.0            # Much lower (was 6.0) - wider variance
+    outputscale_concentration: 0.2   # Lower (was 0.5) - wider variance
+    outputscale_rate: 0.05           # Lower (was 0.15) - wider variance
+    noise_concentration: 0.8         # Lower (was 1.1) - wider variance
+    noise_rate: 0.03                 # Lower (was 0.05) - wider variance
+    nu: null                         # Will vary instead of fixing at 2.5
+
+# Paths
+save_dir: ./experiments/iterative_collapse/checkpoints
+metrics_dir: ./experiments/iterative_collapse/metrics
+generate_plots: true
