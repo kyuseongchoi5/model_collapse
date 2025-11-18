@@ -10,7 +10,7 @@ use_autoregressive_synthetic: true
 
 # Data parameters
 prior: mlp             # Random neural network functions (extremely diverse)
-num_features: 10       # 10D for comparison with Mix GP
+num_features: 30       # 10D for comparison with Mix GP
 loss_function: mse     # MLP outputs deterministic values, not distributions
 bptt: 50
 batch_size: 1000
