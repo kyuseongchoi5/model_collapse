@@ -34,10 +34,19 @@ def get_model(x, y, hyperparameters: dict, sample=True):
             initial_value=noise_prior_mode,
         ),
     )
+
+    # Handle nu parameter - can be fixed value or "random" for sampling
+    nu_param = hyperparameters.get('nu', 2.5)
+    if nu_param == "random":
+        # Randomly sample from valid Matern nu values
+        nu_value = random.choice([0.5, 1.5, 2.5])
+    else:
+        nu_value = nu_param
+
     model = SingleTaskGP(x, y.unsqueeze(-1),
                          covar_module=gpytorch.kernels.ScaleKernel(
                             gpytorch.kernels.MaternKernel(
-                                nu=hyperparameters.get('nu',2.5),
+                                nu=nu_value,
                                 ard_num_dims=x.shape[-1],
                                 batch_shape=aug_batch_shape,
                                 lengthscale_prior=gpytorch.priors.GammaPrior(hyperparameters.get('lengthscale_concentration',3.0), hyperparameters.get('lengthscale_rate',6.0)),
