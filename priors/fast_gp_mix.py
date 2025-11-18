@@ -21,6 +21,31 @@ from utils import default_device
 from .utils import get_batch_to_dataloader
 from . import fast_gp
 
+def validate_matern_nu(nu):
+    """
+    Validate and round nu parameter to nearest valid value for MaternKernel.
+    MaternKernel only accepts nu values of 0.5, 1.5, or 2.5.
+
+    Args:
+        nu: Requested nu value
+
+    Returns:
+        Valid nu value (0.5, 1.5, or 2.5)
+    """
+    valid_nu_values = [0.5, 1.5, 2.5]
+
+    # If nu is already valid, return it
+    if nu in valid_nu_values:
+        return nu
+
+    # Find the nearest valid value
+    nearest_nu = min(valid_nu_values, key=lambda x: abs(x - nu))
+
+    # Warn user about the adjustment
+    print(f"Warning: nu={nu} is not valid for MaternKernel. Using nearest valid value: {nearest_nu}")
+
+    return nearest_nu
+
 def get_model(x, y, hyperparameters: dict, sample=True):
     aug_batch_shape = SingleTaskGP(x,y.unsqueeze(-1))._aug_batch_shape
     noise_prior = GammaPrior(hyperparameters.get('noise_concentration',1.1), hyperparameters.get('noise_rate',0.05))
@@ -37,7 +62,7 @@ def get_model(x, y, hyperparameters: dict, sample=True):
     model = SingleTaskGP(x, y.unsqueeze(-1),
                          covar_module=gpytorch.kernels.ScaleKernel(
                             gpytorch.kernels.MaternKernel(
-                                nu=hyperparameters.get('nu',2.5),
+                                nu=validate_matern_nu(hyperparameters.get('nu',2.5)),
                                 ard_num_dims=x.shape[-1],
                                 batch_shape=aug_batch_shape,
                                 lengthscale_prior=gpytorch.priors.GammaPrior(hyperparameters.get('lengthscale_concentration',3.0), hyperparameters.get('lengthscale_rate',6.0)),
