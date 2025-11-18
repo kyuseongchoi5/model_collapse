@@ -1,7 +1,7 @@
 # Experiment: Very Diverse Mix GP
 # Tests if extreme diversity leads to even better collapse resistance
 
-experiment_name: null  # Auto-generated
+experiment_name: very_diverse_mix_gp  # Distinguish from regular mix_gp
 switch_epoch: 100
 total_epochs: 200
 synthetic_mode: sample
