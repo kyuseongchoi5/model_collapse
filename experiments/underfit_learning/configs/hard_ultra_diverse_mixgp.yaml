@@ -26,7 +26,7 @@ dropout: 0.0
 
 # Training parameters
 lr: 0.001
-warmup_epochs: 30      # vs 50 in original - less converged
+warmup_epochs: 50      # Match original for stability
 validation_period: 10
 permutation_invariant_max_eval_pos: null
 permutation_invariant_sampling: weighted
@@ -40,15 +40,15 @@ pos_encoder: sinus
 extra_prior_kwargs_dict:
   fuse_x_y: false
   hyperparameters:
-    # Wide distributions that remain numerically stable
-    lengthscale_concentration: 0.5         # vs 1.0 in very_diverse (wider, mean=0.5)
-    lengthscale_rate: 1.0                  # vs 2.0 in very_diverse
-    outputscale_concentration: 0.1         # vs 0.2 in very_diverse (wider, mean=5.0)
-    outputscale_rate: 0.02                 # vs 0.05 in very_diverse
-    noise_concentration: 0.5               # vs 0.8 in very_diverse (wider, mean=25)
-    noise_rate: 0.02                       # vs 0.03 in very_diverse (avoid NaN explosion)
+    # Use same base params as very_diverse (proven stable) + kernel diversity
+    lengthscale_concentration: 1.0         # Same as very_diverse (stable)
+    lengthscale_rate: 2.0                  # Same as very_diverse
+    outputscale_concentration: 0.2         # Same as very_diverse (stable)
+    outputscale_rate: 0.05                 # Same as very_diverse
+    noise_concentration: 0.8               # Same as very_diverse (stable, mean=26.7)
+    noise_rate: 0.03                       # Same as very_diverse (proven to work)
     nu: "random"                           # Random smoothness: {0.5, 1.5, 2.5}
-    kernel_type: "random"                  # NEW: Random kernel type: matern/rbf/periodic/linear
+    kernel_type: "random"                  # NEW: 4 kernel types add massive diversity!
 
 # Paths
 save_dir: ./experiments/underfit_learning/checkpoints
