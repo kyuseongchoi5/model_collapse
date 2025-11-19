@@ -160,6 +160,14 @@ def process_hyperparameters(hyper_dict):
     if not isinstance(hyper_dict, dict):
         return hyper_dict
 
+    # GP-specific hyperparameters that should stay as numbers (not callables)
+    # These are passed directly to GammaPrior and other GP constructors
+    GP_NUMERIC_PARAMS = {
+        'lengthscale_concentration', 'lengthscale_rate',
+        'outputscale_concentration', 'outputscale_rate',
+        'noise_concentration', 'noise_rate'
+    }
+
     processed = {}
 
     for key, value in hyper_dict.items():
@@ -170,10 +178,14 @@ def process_hyperparameters(hyper_dict):
             # Parse sampler specification
             processed[key] = parse_sampler(value)
         elif isinstance(value, (int, float)):
-            # Convert numbers to constant samplers for consistency
-            processed[key] = lambda v=value: v  # Capture value in closure
+            # For GP numeric params, keep as numbers
+            # For MLP params, convert to constant samplers
+            if key in GP_NUMERIC_PARAMS:
+                processed[key] = value  # Keep as number
+            else:
+                processed[key] = lambda v=value: v  # Convert to callable
         else:
-            # Pass through as-is (callables, None, etc.)
+            # Pass through as-is (callables, None, strings like "random", etc.)
             processed[key] = value
 
     return processed
