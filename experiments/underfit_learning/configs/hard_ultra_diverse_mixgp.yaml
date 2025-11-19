@@ -40,13 +40,13 @@ pos_encoder: sinus
 extra_prior_kwargs_dict:
   fuse_x_y: false
   hyperparameters:
-    # Even wider distributions than very_diverse config
-    lengthscale_concentration: 0.3         # vs 1.0 in very_diverse (wider tail)
-    lengthscale_rate: 0.5                  # vs 2.0 in very_diverse (wider range)
-    outputscale_concentration: 0.05        # vs 0.2 in very_diverse (wider tail)
-    outputscale_rate: 0.01                 # vs 0.05 in very_diverse (wider range)
-    noise_concentration: 0.3               # vs 0.8 in very_diverse (wider tail)
-    noise_rate: 0.005                      # vs 0.03 in very_diverse (wider range)
+    # Wide distributions that remain numerically stable
+    lengthscale_concentration: 0.5         # vs 1.0 in very_diverse (wider, mean=0.5)
+    lengthscale_rate: 1.0                  # vs 2.0 in very_diverse
+    outputscale_concentration: 0.1         # vs 0.2 in very_diverse (wider, mean=5.0)
+    outputscale_rate: 0.02                 # vs 0.05 in very_diverse
+    noise_concentration: 0.5               # vs 0.8 in very_diverse (wider, mean=25)
+    noise_rate: 0.02                       # vs 0.03 in very_diverse (avoid NaN explosion)
     nu: "random"                           # Random smoothness: {0.5, 1.5, 2.5}
     kernel_type: "random"                  # NEW: Random kernel type: matern/rbf/periodic/linear
 
