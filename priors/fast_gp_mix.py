@@ -121,15 +121,19 @@ def get_model(x, y, hyperparameters: dict, sample=True):
         kernel_type1 = hyperparameters.get('kernel_type', 'matern')
         kernel_type2 = hyperparameters.get('kernel_type', 'matern')
 
+        # Use smaller outputscale priors for composite kernels to prevent extreme values
+        # Default to 1/4 of single kernel outputscale to account for multiplication
+        composite_conc = hyperparameters.get('composite_outputscale_concentration',
+                                            hyperparameters.get('outputscale_concentration', .5) * 0.5)
+        composite_rate = hyperparameters.get('composite_outputscale_rate',
+                                            hyperparameters.get('outputscale_rate', 0.15) * 2.0)
+
         # Create first component with its own hyperparameters
         base_kernel1 = _create_base_kernel(kernel_type1, hyperparameters, x, aug_batch_shape)
         covar_module1 = gpytorch.kernels.ScaleKernel(
             base_kernel1,
             batch_shape=aug_batch_shape,
-            outputscale_prior=gpytorch.priors.GammaPrior(
-                hyperparameters.get('outputscale_concentration', .5),
-                hyperparameters.get('outputscale_rate', 0.15)
-            ),
+            outputscale_prior=gpytorch.priors.GammaPrior(composite_conc, composite_rate),
         )
 
         # Create second component with independently sampled hyperparameters
@@ -137,10 +141,7 @@ def get_model(x, y, hyperparameters: dict, sample=True):
         covar_module2 = gpytorch.kernels.ScaleKernel(
             base_kernel2,
             batch_shape=aug_batch_shape,
-            outputscale_prior=gpytorch.priors.GammaPrior(
-                hyperparameters.get('outputscale_concentration', .5),
-                hyperparameters.get('outputscale_rate', 0.15)
-            ),
+            outputscale_prior=gpytorch.priors.GammaPrior(composite_conc, composite_rate),
         )
 
         # Compose kernels

@@ -45,7 +45,7 @@ extra_prior_kwargs_dict:
   hyperparameters:
     lengthscale_concentration: 1.0
     lengthscale_rate: 2.0
-    outputscale_concentration: 0.2
+    outputscale_concentration: 0.2    # Single kernel: mean=4.0
     outputscale_rate: 0.05
     noise_concentration: 0.8
     noise_rate: 0.03
@@ -54,6 +54,8 @@ extra_prior_kwargs_dict:
     period_concentration: 1.0         # For periodic kernels
     period_rate: 1.0
     composite_kernel_prob: 1.0        # 100% composite kernels (max complexity)
+    composite_outputscale_concentration: 0.1  # Composite: mean=1.0 (prevents extreme products)
+    composite_outputscale_rate: 0.1
 
 # Paths
 save_dir: ./experiments/gp_complexity/checkpoints

@@ -167,7 +167,8 @@ def process_hyperparameters(hyper_dict):
         'outputscale_concentration', 'outputscale_rate',
         'noise_concentration', 'noise_rate',
         'period_concentration', 'period_rate',
-        'composite_kernel_prob'
+        'composite_kernel_prob',
+        'composite_outputscale_concentration', 'composite_outputscale_rate'
     }
 
     processed = {}
