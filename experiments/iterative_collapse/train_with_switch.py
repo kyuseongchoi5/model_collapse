@@ -200,6 +200,16 @@ def train_with_switch(
                 from pathlib import Path
                 diag_dir = Path(save_dir).parent / 'diagnostics'
                 diag_dir.mkdir(parents=True, exist_ok=True)
+                diag_file = diag_dir / 'nan_diagnostics.json'
+
+                # Load existing data or create new
+                if diag_file.exists():
+                    with open(diag_file, 'r') as f:
+                        all_diagnostics = json.load(f)
+                else:
+                    all_diagnostics = {'nan_events': []}
+
+                # Add this NaN event
                 debug_info = {'epoch': epoch_num, 'batch': batch, 'data_source': data_source_name}
                 if isinstance(data, tuple):
                     debug_info['y_data_range'] = [data[1].min().item(), data[1].max().item()]
@@ -212,9 +222,14 @@ def train_with_switch(
                     debug_info['var_num_total'] = var_raw.numel()
                     debug_info['mean_pred_range'] = [mean_pred.min().item(), mean_pred.max().item()]
                     debug_info['targets_range'] = [targets.min().item(), targets.max().item()]
-                debug_file = diag_dir / f'nan_debug_epoch{epoch_num}_batch{batch}.json'
-                debug_file.write_text(json.dumps(debug_info, indent=2))
-                print(f"\n!!! NaN LOSS at epoch {epoch_num}, batch {batch}! Debug: {debug_file}")
+
+                all_diagnostics['nan_events'].append(debug_info)
+
+                # Save updated diagnostics
+                with open(diag_file, 'w') as f:
+                    json.dump(all_diagnostics, f, indent=2)
+
+                print(f"\n!!! NaN LOSS at epoch {epoch_num}, batch {batch}! (Total NaN events: {len(all_diagnostics['nan_events'])})")
             # === END DIAGNOSTIC ===
 
             loss.backward()
