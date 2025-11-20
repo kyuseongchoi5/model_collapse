@@ -4,16 +4,16 @@
 experiment_name: null  # Auto-generated
 experiment_prefix: hard_ultra
 switch_epoch: 100      # Switch when still underfit
-total_epochs: 300      # Long enough to see if improvement continues
+total_epochs: 200      # Long enough to see if improvement continues
 synthetic_mode: sample
 synthetic_ratio: 1.0
 use_autoregressive_synthetic: true
 
 # Hard task parameters
 prior: mix_gp
-num_features: 100      # vs 30 in original experiments
+num_features: 30      # vs 30 in original experiments
 loss_function: gaussnll
-bptt: 100             # vs 50 in original experiments
+bptt: 50             # vs 50 in original experiments
 batch_size: 1000
 steps_per_epoch: 20
 
