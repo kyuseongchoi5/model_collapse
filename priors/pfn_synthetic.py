@@ -111,14 +111,7 @@ def get_batch(batch_size, seq_len, num_features, device=default_device,
             if pred_at_t.shape[-1] == 2:
                 # Mean and variance predicted
                 mean = pred_at_t[:, 0]
-                # Use abs() like training loop, then clamp to ensure positive variance
-                var = pred_at_t[:, 1].abs().clamp(min=1e-4)
-
-                # Handle NaN values that might arise from composite kernels
-                if torch.isnan(mean).any() or torch.isnan(var).any():
-                    # Replace NaN with safe defaults
-                    mean = torch.where(torch.isnan(mean), torch.zeros_like(mean), mean)
-                    var = torch.where(torch.isnan(var), torch.ones_like(var) * 0.1, var)
+                var = pred_at_t[:, 1].clamp(min=1e-4)  # Ensure positive variance
             else:
                 # Only mean predicted
                 mean = pred_at_t.squeeze(-1) if len(pred_at_t.shape) > 1 else pred_at_t
@@ -230,13 +223,7 @@ def get_batch_simple(batch_size, seq_len, num_features, device=default_device,
     if loss_function in ['gaussnll']:
         if output.shape[-1] == 2:
             mean = output[..., 0]
-            # Use abs() like training loop, then clamp to ensure positive variance
-            var = output[..., 1].abs().clamp(min=1e-4)
-
-            # Handle NaN values that might arise from composite kernels
-            if torch.isnan(mean).any() or torch.isnan(var).any():
-                mean = torch.where(torch.isnan(mean), torch.zeros_like(mean), mean)
-                var = torch.where(torch.isnan(var), torch.ones_like(var) * 0.1, var)
+            var = output[..., 1].clamp(min=1e-4)
         else:
             mean = output.squeeze(-1) if len(output.shape) > 2 else output
             var = torch.ones_like(mean) * 0.1
