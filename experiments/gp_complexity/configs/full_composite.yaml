@@ -1,0 +1,61 @@
+# Experiment: Full Composite Kernels (100% Composite)
+# This config uses composite_kernel_prob=1.0 so ALL GPs use composite kernels.
+# Each GP gets k = k1 + k2 or k = k1 × k2 with independent hyperparameters.
+#
+# Purpose: Test maximum prior complexity through kernel composition
+
+experiment_name: null  # Auto-generated
+experiment_prefix: full_composite
+switch_epoch: 100
+total_epochs: 200
+synthetic_mode: sample
+synthetic_ratio: 1.0
+use_autoregressive_synthetic: true
+
+# Task parameters - match very_diverse for comparison
+prior: mix_gp
+num_features: 30
+loss_function: gaussnll
+bptt: 50
+batch_size: 1000
+steps_per_epoch: 20
+
+# Model architecture
+emsize: 512
+nlayers: 6
+nhid: 1024
+nhead: 4
+dropout: 0.0
+
+# Training parameters
+lr: 0.001
+warmup_epochs: 50
+validation_period: 10
+permutation_invariant_max_eval_pos: null
+permutation_invariant_sampling: weighted
+
+# Encoder parameters
+encoder: linear
+y_encoder: linear
+pos_encoder: sinus
+
+# GP Hyperparameters - Maximum Diversity (100% Composite Kernels)
+extra_prior_kwargs_dict:
+  fuse_x_y: false
+  hyperparameters:
+    lengthscale_concentration: 1.0
+    lengthscale_rate: 2.0
+    outputscale_concentration: 0.2
+    outputscale_rate: 0.05
+    noise_concentration: 0.8
+    noise_rate: 0.03
+    nu: "random"                      # Random smoothness: {0.5, 1.5, 2.5}
+    kernel_type: "random"             # 4 kernel types: {matern, rbf, periodic, linear}
+    period_concentration: 1.0         # For periodic kernels
+    period_rate: 1.0
+    composite_kernel_prob: 1.0        # 100% composite kernels (max complexity)
+
+# Paths
+save_dir: ./experiments/gp_complexity/checkpoints
+metrics_dir: ./experiments/gp_complexity/metrics
+generate_plots: true

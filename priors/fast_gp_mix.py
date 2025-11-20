@@ -21,28 +21,21 @@ from utils import default_device
 from .utils import get_batch_to_dataloader
 from . import fast_gp
 
-def get_model(x, y, hyperparameters: dict, sample=True):
-    aug_batch_shape = SingleTaskGP(x,y.unsqueeze(-1))._aug_batch_shape
-    noise_prior = GammaPrior(hyperparameters.get('noise_concentration',1.1), hyperparameters.get('noise_rate',0.05))
-    noise_prior_mode = (noise_prior.concentration - 1) / noise_prior.rate
-    likelihood = GaussianLikelihood(
-        noise_prior=noise_prior,
-        batch_shape=aug_batch_shape,
-        noise_constraint=GreaterThan(
-            MIN_INFERRED_NOISE_LEVEL,
-            transform=None,
-            initial_value=noise_prior_mode,
-        ),
-    )
+def _create_base_kernel(kernel_type, hyperparameters, x, aug_batch_shape):
+    """Helper function to create a single base kernel component.
 
-    # Kernel type selection - supports diversity across kernel families
-    kernel_type = hyperparameters.get('kernel_type', 'matern')
+    Args:
+        kernel_type: One of 'matern', 'rbf', 'periodic', 'linear', or 'random'
+        hyperparameters: Dict of hyperparameter values
+        x: Input tensor (for dimensionality)
+        aug_batch_shape: Batch shape for the kernel
 
+    Returns:
+        base_kernel: The created kernel (not wrapped in ScaleKernel)
+    """
     if kernel_type == 'random':
-        # Randomly select kernel type for maximum diversity
         kernel_type = random.choice(['matern', 'rbf', 'periodic', 'linear'])
 
-    # Build base kernel based on selected type
     if kernel_type == 'matern':
         # Handle nu parameter - can be fixed value or "random" for sampling
         nu_param = hyperparameters.get('nu', 2.5)
@@ -80,7 +73,10 @@ def get_model(x, y, hyperparameters: dict, sample=True):
                 hyperparameters.get('lengthscale_concentration', 3.0),
                 hyperparameters.get('lengthscale_rate', 6.0)
             ),
-            period_length_prior=gpytorch.priors.GammaPrior(1.0, 1.0),
+            period_length_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('period_concentration', 1.0),
+                hyperparameters.get('period_rate', 1.0)
+            ),
         )
 
     elif kernel_type == 'linear':
@@ -96,15 +92,77 @@ def get_model(x, y, hyperparameters: dict, sample=True):
     else:
         raise ValueError(f"Unknown kernel_type: {kernel_type}. Must be one of: 'matern', 'rbf', 'periodic', 'linear', 'random'")
 
-    # Wrap base kernel in ScaleKernel
-    covar_module = gpytorch.kernels.ScaleKernel(
-        base_kernel,
+    return base_kernel
+
+
+def get_model(x, y, hyperparameters: dict, sample=True):
+    aug_batch_shape = SingleTaskGP(x,y.unsqueeze(-1))._aug_batch_shape
+    noise_prior = GammaPrior(hyperparameters.get('noise_concentration',1.1), hyperparameters.get('noise_rate',0.05))
+    noise_prior_mode = (noise_prior.concentration - 1) / noise_prior.rate
+    likelihood = GaussianLikelihood(
+        noise_prior=noise_prior,
         batch_shape=aug_batch_shape,
-        outputscale_prior=gpytorch.priors.GammaPrior(
-            hyperparameters.get('outputscale_concentration', .5),
-            hyperparameters.get('outputscale_rate', 0.15)
+        noise_constraint=GreaterThan(
+            MIN_INFERRED_NOISE_LEVEL,
+            transform=None,
+            initial_value=noise_prior_mode,
         ),
     )
+
+    # Check if we should create a composite kernel
+    composite_kernel_prob = hyperparameters.get('composite_kernel_prob', 0.0)
+    use_composite = random.random() < composite_kernel_prob
+
+    if use_composite:
+        # COMPOSITE KERNEL: k1 ⊕ k2 where ⊕ is + or ×
+        composition_type = random.choice(['sum', 'product'])
+
+        # Select kernel types for both components (can be same)
+        kernel_type1 = hyperparameters.get('kernel_type', 'matern')
+        kernel_type2 = hyperparameters.get('kernel_type', 'matern')
+
+        # Create first component with its own hyperparameters
+        base_kernel1 = _create_base_kernel(kernel_type1, hyperparameters, x, aug_batch_shape)
+        covar_module1 = gpytorch.kernels.ScaleKernel(
+            base_kernel1,
+            batch_shape=aug_batch_shape,
+            outputscale_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('outputscale_concentration', .5),
+                hyperparameters.get('outputscale_rate', 0.15)
+            ),
+        )
+
+        # Create second component with independently sampled hyperparameters
+        base_kernel2 = _create_base_kernel(kernel_type2, hyperparameters, x, aug_batch_shape)
+        covar_module2 = gpytorch.kernels.ScaleKernel(
+            base_kernel2,
+            batch_shape=aug_batch_shape,
+            outputscale_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('outputscale_concentration', .5),
+                hyperparameters.get('outputscale_rate', 0.15)
+            ),
+        )
+
+        # Compose kernels
+        if composition_type == 'sum':
+            covar_module = covar_module1 + covar_module2
+        else:  # product
+            covar_module = covar_module1 * covar_module2
+
+    else:
+        # SINGLE KERNEL (backward compatible - original behavior)
+        kernel_type = hyperparameters.get('kernel_type', 'matern')
+        base_kernel = _create_base_kernel(kernel_type, hyperparameters, x, aug_batch_shape)
+
+        # Wrap base kernel in ScaleKernel
+        covar_module = gpytorch.kernels.ScaleKernel(
+            base_kernel,
+            batch_shape=aug_batch_shape,
+            outputscale_prior=gpytorch.priors.GammaPrior(
+                hyperparameters.get('outputscale_concentration', .5),
+                hyperparameters.get('outputscale_rate', 0.15)
+            ),
+        )
 
     # Build model with selected kernel
     model = SingleTaskGP(x, y.unsqueeze(-1),
