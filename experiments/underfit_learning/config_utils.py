@@ -165,7 +165,9 @@ def process_hyperparameters(hyper_dict):
     GP_NUMERIC_PARAMS = {
         'lengthscale_concentration', 'lengthscale_rate',
         'outputscale_concentration', 'outputscale_rate',
-        'noise_concentration', 'noise_rate'
+        'noise_concentration', 'noise_rate',
+        'period_concentration', 'period_rate',
+        'composite_kernel_prob'
     }
 
     processed = {}
