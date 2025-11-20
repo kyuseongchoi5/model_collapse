@@ -1,0 +1,82 @@
+To add diagnostics, add these code blocks to train_with_switch.py:
+
+========================================================================================
+LOCATION 1: After line 33 (after imports)
+========================================================================================
+import json
+from pathlib import Path
+import os
+
+# Diagnostic logging setup
+ENABLE_DIAGNOSTICS = os.environ.get('ENABLE_DIAGNOSTICS', '0') == '1'
+diagnostic_data = {
+    'training_data': [],
+    'model_predictions': [],
+    'losses': [],
+} if ENABLE_DIAGNOSTICS else None
+
+========================================================================================
+LOCATION 2: Inside train_epoch(), after line 183 (after targets adjustment)
+========================================================================================
+            # DIAGNOSTIC: Log training data
+            if ENABLE_DIAGNOSTICS and batch < 5:  # Only log first 5 batches
+                if isinstance(data, tuple):
+                    y_check = data[1]
+                else:
+                    y_check = targets
+                diagnostic_data['training_data'].append({
+                    'epoch': epoch_num,
+                    'batch': batch,
+                    'y_has_nan': torch.isnan(y_check).any().item(),
+                    'y_min': y_check.min().item(),
+                    'y_max': y_check.max().item(),
+                })
+
+========================================================================================
+LOCATION 3: Inside train_epoch(), after line 187 (after var_pred = output[..., 1].abs())
+========================================================================================
+            # DIAGNOSTIC: Log model predictions
+            if ENABLE_DIAGNOSTICS and isinstance(criterion, nn.GaussianNLLLoss) and batch < 5:
+                var_pred_raw = output[..., 1]  # Before .abs()
+                diagnostic_data['model_predictions'].append({
+                    'epoch': epoch_num,
+                    'batch': batch,
+                    'mean_has_nan': torch.isnan(mean_pred).any().item(),
+                    'var_raw_min': var_pred_raw.min().item(),
+                    'var_raw_max': var_pred_raw.max().item(),
+                    'var_raw_has_negative': (var_pred_raw < 0).any().item(),
+                    'var_raw_num_negative': (var_pred_raw < 0).sum().item(),
+                    'var_abs_min': var_pred.min().item(),
+                    'var_abs_max': var_pred.max().item(),
+                })
+
+========================================================================================
+LOCATION 4: Inside train_epoch(), after line 195 (after loss = losses.mean())
+========================================================================================
+            # DIAGNOSTIC: Log loss
+            if ENABLE_DIAGNOSTICS and batch < 5:
+                diagnostic_data['losses'].append({
+                    'epoch': epoch_num,
+                    'batch': batch,
+                    'loss': loss.item(),
+                    'loss_is_nan': torch.isnan(loss).item(),
+                })
+                if torch.isnan(loss).item():
+                    print(f"\n!!! NaN LOSS DETECTED at epoch {epoch_num}, batch {batch} !!!")
+                    print(f"    targets range: [{targets.min():.4f}, {targets.max():.4f}]")
+                    if isinstance(criterion, nn.GaussianNLLLoss):
+                        print(f"    mean_pred range: [{mean_pred.min():.4f}, {mean_pred.max():.4f}]")
+                        print(f"    var_pred range: [{var_pred.min():.4f}, {var_pred.max():.4f}]")
+                    print()
+
+========================================================================================
+LOCATION 5: At end of train_with_switch(), before final return (around line 328)
+========================================================================================
+    # DIAGNOSTIC: Save diagnostic data
+    if ENABLE_DIAGNOSTICS:
+        diag_path = Path(metrics_dir) / f'{experiment_name}_diagnostics.json'
+        with open(diag_path, 'w') as f:
+            json.dump(diagnostic_data, f, indent=2)
+        print(f"\nDiagnostics saved to: {diag_path}")
+
+========================================================================================
