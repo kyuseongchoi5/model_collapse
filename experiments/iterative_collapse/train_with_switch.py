@@ -194,6 +194,26 @@ def train_with_switch(
             losses = losses.view(*output.shape[0:2]).squeeze(-1)
             loss = losses.mean()
 
+            # === DIAGNOSTIC LOGGING ===
+            if torch.isnan(loss):
+                import json
+                from pathlib import Path
+                debug_info = {'epoch': epoch_num, 'batch': batch, 'data_source': data_source_name}
+                if isinstance(data, tuple):
+                    debug_info['y_data_range'] = [data[1].min().item(), data[1].max().item()]
+                    debug_info['y_has_nan'] = torch.isnan(data[1]).any().item()
+                if isinstance(criterion, nn.GaussianNLLLoss):
+                    var_raw = output[..., 1]
+                    debug_info['var_raw_range'] = [var_raw.min().item(), var_raw.max().item()]
+                    debug_info['var_has_negative'] = (var_raw < 0).any().item()
+                    debug_info['var_num_negative'] = (var_raw < 0).sum().item()
+                    debug_info['var_num_total'] = var_raw.numel()
+                    debug_info['mean_pred_range'] = [mean_pred.min().item(), mean_pred.max().item()]
+                    debug_info['targets_range'] = [targets.min().item(), targets.max().item()]
+                Path(f'/tmp/nan_debug_epoch{epoch_num}_batch{batch}.json').write_text(json.dumps(debug_info, indent=2))
+                print(f"\n!!! NaN LOSS at epoch {epoch_num}, batch {batch}! Debug: /tmp/nan_debug_epoch{epoch_num}_batch{batch}.json")
+            # === END DIAGNOSTIC ===
+
             loss.backward()
 
             if batch % aggregate_k_gradients == aggregate_k_gradients - 1:
