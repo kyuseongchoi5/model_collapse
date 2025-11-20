@@ -198,6 +198,8 @@ def train_with_switch(
             if torch.isnan(loss):
                 import json
                 from pathlib import Path
+                diag_dir = Path(save_dir).parent / 'diagnostics'
+                diag_dir.mkdir(parents=True, exist_ok=True)
                 debug_info = {'epoch': epoch_num, 'batch': batch, 'data_source': data_source_name}
                 if isinstance(data, tuple):
                     debug_info['y_data_range'] = [data[1].min().item(), data[1].max().item()]
@@ -210,8 +212,9 @@ def train_with_switch(
                     debug_info['var_num_total'] = var_raw.numel()
                     debug_info['mean_pred_range'] = [mean_pred.min().item(), mean_pred.max().item()]
                     debug_info['targets_range'] = [targets.min().item(), targets.max().item()]
-                Path(f'/tmp/nan_debug_epoch{epoch_num}_batch{batch}.json').write_text(json.dumps(debug_info, indent=2))
-                print(f"\n!!! NaN LOSS at epoch {epoch_num}, batch {batch}! Debug: /tmp/nan_debug_epoch{epoch_num}_batch{batch}.json")
+                debug_file = diag_dir / f'nan_debug_epoch{epoch_num}_batch{batch}.json'
+                debug_file.write_text(json.dumps(debug_info, indent=2))
+                print(f"\n!!! NaN LOSS at epoch {epoch_num}, batch {batch}! Debug: {debug_file}")
             # === END DIAGNOSTIC ===
 
             loss.backward()
